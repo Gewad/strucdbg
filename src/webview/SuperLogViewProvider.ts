@@ -31,7 +31,7 @@ export class SuperLogViewProvider implements vscode.WebviewViewProvider {
         }, 100);
 
         // Listen for messages from the Frontend (The REPL input)
-        webviewView.webview.onDidReceiveMessage(data => {
+        webviewView.webview.onDidReceiveMessage(async data => {
             if (data.type === 'evaluate') {
                 const session = vscode.debug.activeDebugSession;
                 if (session) {
@@ -42,6 +42,45 @@ export class SuperLogViewProvider implements vscode.WebviewViewProvider {
                     });
                 } else {
                     this.addLog("No active debug session.", 'error');
+                }
+            } else if (data.type === 'openFile') {
+                // Open file at specific line from exception traceback
+                const fileUri = vscode.Uri.file(data.file);
+                vscode.window.showTextDocument(fileUri, {
+                    selection: new vscode.Range(data.line - 1, 0, data.line - 1, 0),
+                    preview: false
+                });
+            } else if (data.type === 'getCodeLine') {
+                // Fetch code line and send back to webview
+                console.log('[ViewProvider] Getting code line:', data.file, 'line:', data.line, 'requestId:', data.requestId);
+                try {
+                    const fileUri = vscode.Uri.file(data.file);
+                    const document = await vscode.workspace.openTextDocument(fileUri);
+                    const lineIndex = data.line - 1;
+                    if (lineIndex >= 0 && lineIndex < document.lineCount) {
+                        const line = document.lineAt(lineIndex);
+                        const codeText = line.text.trimStart(); // Remove leading whitespace
+                        console.log('[ViewProvider] Sending code line for requestId:', data.requestId, 'code:', codeText.substring(0, 50));
+                        webviewView.webview.postMessage({
+                            type: 'code-line',
+                            requestId: data.requestId,
+                            code: codeText
+                        });
+                    } else {
+                        console.log('[ViewProvider] Line out of range for requestId:', data.requestId);
+                        webviewView.webview.postMessage({
+                            type: 'code-line',
+                            requestId: data.requestId,
+                            code: null
+                        });
+                    }
+                } catch (error) {
+                    console.error('[ViewProvider] Error loading code line:', error, 'requestId:', data.requestId);
+                    webviewView.webview.postMessage({
+                        type: 'code-line',
+                        requestId: data.requestId,
+                        code: null
+                    });
                 }
             }
         });
