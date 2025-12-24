@@ -185,9 +185,31 @@
             let activeSession = null;
             const sessions = new Map(); // sessionId -> { tab, content, logsDiv, operationGroups }
             const pendingCodeRequests = new Map(); // requestId -> codeDiv element
-            
+            let autoScroll = true; // Auto-scroll enabled by default
+
             status.textContent = 'Webview Ready';
-            
+
+            // Detect user scrolling up to disable auto-scroll
+            let lastScrollTop = 0;
+            let autoscrollCutoff = 8;
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const scrollHeight = document.documentElement.scrollHeight;
+                const clientHeight = document.documentElement.clientHeight;
+                const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+                // If user scrolled up (not at bottom), disable auto-scroll
+                if (scrollTop < lastScrollTop && distanceFromBottom > autoscrollCutoff) {
+                    autoScroll = false;
+                }
+                // If user scrolled to near bottom (within autoscrollCutoff px), re-enable auto-scroll
+                else if (distanceFromBottom < autoscrollCutoff) {
+                    autoScroll = true;
+                }
+
+                lastScrollTop = scrollTop;
+            });
+
             // Create initial session
             createSession('Welcome', 'Welcome', true);
             const welcomeSession = sessions.get('Welcome');
@@ -216,9 +238,14 @@
                     const closeBtn = document.createElement('span');
                     closeBtn.className = 'tab-close';
                     closeBtn.textContent = '×';
+                    closeBtn.style.opacity = '0.3';
+                    closeBtn.style.cursor = 'not-allowed';
                     closeBtn.onclick = (e) => {
                         e.stopPropagation();
-                        closeSession(sessionId);
+                        const session = sessions.get(sessionId);
+                        if (session && !session.isActive) {
+                            closeSession(sessionId);
+                        }
                     };
                     tab.appendChild(closeBtn);
                 }
@@ -242,7 +269,9 @@
                     content,
                     logsDiv,
                     operationGroups: new Map(),
-                    name: sessionName
+                    name: sessionName,
+                    isActive: true,
+                    closeBtn: !isWelcome ? tab.querySelector('.tab-close') : null
                 });
                 
                 switchToSession(sessionId);
@@ -292,6 +321,16 @@
                         message.sessionName || `Session ${sessionCounter + 1}`,
                         message.sessionId
                     );
+                } else if (message.type === 'session-ended') {
+                    // Mark session as inactive and enable close button
+                    const session = sessions.get(message.sessionId);
+                    if (session) {
+                        session.isActive = false;
+                        if (session.closeBtn) {
+                            session.closeBtn.style.opacity = '0.7';
+                            session.closeBtn.style.cursor = 'pointer';
+                        }
+                    }
                 } else if (message.type === 'code-line') {
                     // Handle code line response
                     const codeDiv = pendingCodeRequests.get(message.requestId);
@@ -340,7 +379,9 @@
                         }
                         
                         session.logsDiv.appendChild(div);
-                        window.scrollTo(0, document.body.scrollHeight);
+                        if (autoScroll) {
+                            window.scrollTo(0, document.body.scrollHeight);
+                        }
                     }
                 }
             });
@@ -391,7 +432,9 @@
                 renderStructured(subLogDiv, data);
                 group.subLogs.appendChild(subLogDiv);
                 
-                window.scrollTo(0, document.body.scrollHeight);
+                if (autoScroll) {
+                    window.scrollTo(0, document.body.scrollHeight);
+                }
             }
 
             function createCountBadge() {
