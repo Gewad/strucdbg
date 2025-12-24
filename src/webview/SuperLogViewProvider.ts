@@ -102,6 +102,13 @@ export class SuperLogViewProvider implements vscode.WebviewViewProvider {
             this._view.webview.postMessage({ type: 'new-session', sessionId, sessionName });
         }
     }
+
+    public notifySessionEnded(sessionId: string) {
+        console.log('[ViewProvider] Debug session ended:', sessionId);
+        if (this._view) {
+            this._view.webview.postMessage({ type: 'session-ended', sessionId });
+        }
+    }
     private _getHtmlForWebview(webview: vscode.Webview): string {
         // Try to load from src/ first (development), then from dist/ (production)
         const possiblePaths = [

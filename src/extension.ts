@@ -27,6 +27,14 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    // Track debug session terminations
+    context.subscriptions.push(
+        vscode.debug.onDidTerminateDebugSession((session) => {
+            console.log('[Extension] Debug session terminated:', session.name, 'id:', session.id);
+            provider.notifySessionEnded(session.id);
+        })
+    );
+
     const trackerFactory = createDebugAdapterTrackerFactory(provider);
     vscode.debug.registerDebugAdapterTrackerFactory('*', trackerFactory);
 }
