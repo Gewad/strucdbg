@@ -22,8 +22,8 @@ export function activate(context: vscode.ExtensionContext) {
     // Track debug session starts
     context.subscriptions.push(
         vscode.debug.onDidStartDebugSession((session) => {
-            console.log('[Extension] Debug session started:', session.name);
-            provider.notifyNewSession(session.name);
+            console.log('[Extension] Debug session started:', session.name, 'id:', session.id);
+            provider.notifyNewSession(session.id, session.name);
         })
     );
 

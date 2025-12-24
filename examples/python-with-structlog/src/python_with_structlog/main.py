@@ -1,4 +1,6 @@
 import structlog
+import time
+import random
 
 processors = [
     structlog.processors.dict_tracebacks,
@@ -24,7 +26,7 @@ def log_all():
         logger.exception("Caught an exception!", ev="exception_occurred")
 
 
-def nested_traceback(levels = 5):
+def nested_traceback(levels=5):
     if levels <= 0:
         raise ValueError("Innermost exception")
     else:
@@ -47,4 +49,9 @@ if __name__ == "__main__":
     except RuntimeError:
         logger.exception("Nested exception occurred!", ev="nested_exception")
 
-    pass
+
+    # generate a random 5 letter string
+    random_str = ''.join(random.choices(["a", "b", "c", "d", "e"], k=5))
+    while True:
+        logger.info("Running main loop...", ev="main_loop", random_str=random_str)
+        time.sleep(5)

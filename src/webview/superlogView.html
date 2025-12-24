@@ -189,15 +189,18 @@
             status.textContent = 'Webview Ready';
             
             // Create initial session
-            createSession('Welcome', true);
+            createSession('Welcome', 'Welcome', true);
             const welcomeSession = sessions.get('Welcome');
             const testDiv = document.createElement('div');
             testDiv.className = 'log-entry raw';
             testDiv.textContent = 'Webview script loaded successfully. Start debugging to create a new session.';
             welcomeSession.logsDiv.appendChild(testDiv);
 
-            function createSession(sessionName, isWelcome = false) {
-                const sessionId = isWelcome ? sessionName : `session-${++sessionCounter}`;
+            function createSession(sessionName, sessionId = null, isWelcome = false) {
+                // Use provided sessionId or generate one
+                if (!sessionId) {
+                    sessionId = isWelcome ? sessionName : `session-${++sessionCounter}`;
+                }
                 
                 if (sessions.has(sessionId)) {
                     switchToSession(sessionId);
@@ -285,7 +288,10 @@
                 
                 if (message.type === 'new-session') {
                     // Create new session for debug session
-                    createSession(message.sessionName || `Session ${sessionCounter + 1}`);
+                    createSession(
+                        message.sessionName || `Session ${sessionCounter + 1}`,
+                        message.sessionId
+                    );
                 } else if (message.type === 'code-line') {
                     // Handle code line response
                     const codeDiv = pendingCodeRequests.get(message.requestId);
@@ -307,9 +313,10 @@
                     if (message.logType === 'raw' || message.logType === 'error') {
                         sessionId = 'Welcome';
                     } else {
-                        // For structured logs, use active session or create one
-                        sessionId = activeSession;
-                        if (!sessionId || sessionId === 'Welcome') {
+                        // For structured logs, use sessionId from message or create default session
+                        sessionId = message.sessionId;
+                        if (!sessionId || !sessions.has(sessionId)) {
+                            // Fallback: create a default session if none exists
                             sessionId = createSession(`Session ${sessionCounter + 1}`);
                         }
                     }

@@ -4,26 +4,26 @@ import { SuperLogViewProvider } from '../webview/SuperLogViewProvider';
 export function createDebugAdapterTrackerFactory(provider: SuperLogViewProvider): vscode.DebugAdapterTrackerFactory {
     return {
         createDebugAdapterTracker(session: vscode.DebugSession) {
-            console.log('[DebugAdapter] Tracker created for session:', session.name);
+            console.log('[DebugAdapter] Tracker created for session:', session.name, 'id:', session.id);
+            const sessionId = session.id;
             return {
                 onDidSendMessage: (message) => {
                     console.log('[DebugAdapter] Message received - type:', message.type, 'event:', message.event);
-                    console.log('[DebugAdapter] Message received - type:', message.type, 'event:', message.event);
                     if (message.type === 'event' && message.event === 'output') {
                         const outputText = message.body.output;
-                        console.log('[DebugAdapter] Output detected, length:', outputText?.length);
+                        console.log('[DebugAdapter] Output detected, length:', outputText?.length, 'sessionId:', sessionId);
                         
                         // Split on '}\n{' or '}{' to handle batched JSON objects
                         const potentialLines = outputText.split(/}\s*{/).map((part: string, idx: number, arr: string[]) => {
-                            if (idx === 0 && arr.length > 1) return part + '}';
-                            if (idx === arr.length - 1 && arr.length > 1) return '{' + part;
-                            if (arr.length > 1) return '{' + part + '}';
+                            if (idx === 0 && arr.length > 1) { return part + '}'; }
+                            if (idx === arr.length - 1 && arr.length > 1) { return '{' + part; }
+                            if (arr.length > 1) { return '{' + part + '}'; }
                             return part;
                         });
                         
                         for (const line of potentialLines) {
                             const trimmedLine = line.trim();
-                            if (!trimmedLine) continue;
+                            if (!trimmedLine) { continue; }
                             
                             try {
                                 const parsed = JSON.parse(trimmedLine);
@@ -49,20 +49,20 @@ export function createDebugAdapterTrackerFactory(provider: SuperLogViewProvider)
                                         severity: rawSeverity,
                                         message: rawMessage
                                     };
-                                    console.log('[DebugAdapter] Normalized - severity:', rawSeverity, 'message:', rawMessage);
+                                    console.log('[DebugAdapter] Normalized - severity:', rawSeverity, 'message:', rawMessage, 'sessionId:', sessionId);
 
-                                    // Send to view
-                                    console.log('[DebugAdapter] Calling addLog with type: structured');
-                                    provider.addLog(normalized, 'structured');
+                                    // Send to view with session ID
+                                    console.log('[DebugAdapter] Calling addLog with type: structured, sessionId:', sessionId);
+                                    provider.addLog(normalized, 'structured', sessionId);
                                 } else {
                                     // Valid JSON but it's a primitive (like "true" or number)
                                     console.log('[DebugAdapter] JSON primitive detected, calling addLog with type: raw');
-                                    provider.addLog(trimmedLine, 'raw');
+                                    provider.addLog(trimmedLine, 'raw', sessionId);
                                 }
                             } catch (e) {
                                 // Not JSON -> treat as raw text
                                 console.log('[DebugAdapter] Not JSON, calling addLog with type: raw');
-                                provider.addLog(trimmedLine, 'raw');
+                                provider.addLog(trimmedLine, 'raw', sessionId);
                             }
                         }
                     }
