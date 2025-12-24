@@ -86,20 +86,20 @@ export class SuperLogViewProvider implements vscode.WebviewViewProvider {
         });
     }
 
-    public addLog(data: any, type: 'structured' | 'raw' | 'error') {
-        console.log('[ViewProvider] addLog called - type:', type, 'view exists:', !!this._view);
+    public addLog(data: any, type: 'structured' | 'raw' | 'error', sessionId?: string) {
+        console.log('[ViewProvider] addLog called - type:', type, 'sessionId:', sessionId, 'view exists:', !!this._view);
         if (this._view) {
             console.log('[ViewProvider] Posting message to webview');
-            this._view.webview.postMessage({ type: 'new-log', logType: type, content: data });
+            this._view.webview.postMessage({ type: 'new-log', logType: type, content: data, sessionId });
         } else {
             console.log('[ViewProvider] WARNING: View not initialized, message lost');
         }
     }
 
-    public notifyNewSession(sessionName: string) {
-        console.log('[ViewProvider] New debug session started:', sessionName);
+    public notifyNewSession(sessionId: string, sessionName: string) {
+        console.log('[ViewProvider] New debug session started:', sessionName, 'id:', sessionId);
         if (this._view) {
-            this._view.webview.postMessage({ type: 'new-session', sessionName });
+            this._view.webview.postMessage({ type: 'new-session', sessionId, sessionName });
         }
     }
     private _getHtmlForWebview(webview: vscode.Webview): string {
