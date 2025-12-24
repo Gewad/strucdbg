@@ -221,10 +221,16 @@
                     messageCount++;
                     status.textContent = 'Messages: ' + messageCount;
                     
-                    // Get current active session or create one
-                    let sessionId = activeSession;
-                    if (!sessionId || sessionId === 'Welcome') {
-                        sessionId = createSession(`Session ${sessionCounter + 1}`);
+                    // Route raw and error logs to Welcome tab
+                    let sessionId;
+                    if (message.logType === 'raw' || message.logType === 'error') {
+                        sessionId = 'Welcome';
+                    } else {
+                        // For structured logs, use active session or create one
+                        sessionId = activeSession;
+                        if (!sessionId || sessionId === 'Welcome') {
+                            sessionId = createSession(`Session ${sessionCounter + 1}`);
+                        }
                     }
                     
                     const session = sessions.get(sessionId);
