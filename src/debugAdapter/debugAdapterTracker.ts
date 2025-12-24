@@ -14,7 +14,7 @@ export function createDebugAdapterTrackerFactory(provider: SuperLogViewProvider)
                         console.log('[DebugAdapter] Output detected, length:', outputText?.length);
                         
                         // Split on '}\n{' or '}{' to handle batched JSON objects
-                        const potentialLines = outputText.split(/}\s*{/).map((part, idx, arr) => {
+                        const potentialLines = outputText.split(/}\s*{/).map((part: string, idx: number, arr: string[]) => {
                             if (idx === 0 && arr.length > 1) return part + '}';
                             if (idx === arr.length - 1 && arr.length > 1) return '{' + part;
                             if (arr.length > 1) return '{' + part + '}';
