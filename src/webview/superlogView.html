@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
+    <style>
+        body { 
+            font-family: var(--vscode-editor-font-family); 
+            padding: 10px; 
+            color: var(--vscode-editor-foreground);
+            background-color: var(--vscode-editor-background);
+        }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid var(--vscode-panel-border); padding: 4px; }
+        .raw { opacity: 0.8; white-space: pre-wrap; }
+        .error { color: var(--vscode-errorForeground); }
+        
+        /* Structured Log Styles */
+        .structured { display: flex; flex-direction: column; }
+        .header { display: flex; align-items: center; cursor: pointer; }
+        .badge { 
+            padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-right: 10px; font-weight: bold;
+            text-transform: uppercase;
+        }
+        .severity-info { background-color: var(--vscode-progressBar-background); color: white; }
+        .severity-debug { background-color: var(--vscode-charts-blue); color: white; }
+        .severity-error { background-color: var(--vscode-errorForeground); color: white; }
+        .severity-critical { background-color: var(--vscode-errorForeground); color: white; }
+        .severity-warn { background-color: var(--vscode-editorWarning-foreground); color: white; }
+        
+        .details { margin-left: 20px; display: none; background: rgba(128,128,128, 0.1); padding: 5px; }
+        .details.open { display: block; }
+        .json-key { color: var(--vscode-debugTokenExpression-name); }
+        .json-val { color: var(--vscode-debugTokenExpression-string); }
+
+        /* Input Area */
+        #input-container {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            padding: 10px; background: var(--vscode-editor-background);
+            border-top: 1px solid var(--vscode-panel-border);
+        }
+        #repl-input {
+            width: 100%; box-sizing: border-box; padding: 8px;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+        }
+        #logs { margin-bottom: 60px; }
+        #status { 
+            position: fixed; top: 5px; right: 5px; 
+            padding: 3px 8px; background: var(--vscode-badge-background); 
+            color: var(--vscode-badge-foreground); border-radius: 3px; font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">Ready</div>
+    <div id="logs"></div>
+    <div id="input-container">
+        <input id="repl-input" type="text" placeholder="Run command...." />
+    </div>
+
+    <script>
+        (function() {
+            // Initialize immediately
+            const status = document.getElementById('status');
+            status.textContent = 'Initializing...';
+            
+            const vscode = acquireVsCodeApi();
+            const logsDiv = document.getElementById('logs');
+            const input = document.getElementById('repl-input');
+            
+            let messageCount = 0;
+            status.textContent = 'Webview Ready';
+            
+            // Add a visible test entry
+            const testDiv = document.createElement('div');
+            testDiv.className = 'log-entry raw';
+            testDiv.textContent = 'Webview script loaded successfully';
+            logsDiv.appendChild(testDiv);
+
+            // Handle incoming logs from Extension
+            window.addEventListener('message', event => {
+                messageCount++;
+                status.textContent = 'Messages: ' + messageCount;
+                
+                const message = event.data;
+                if (message.type === 'new-log') {
+                    const div = document.createElement('div');
+                    div.className = 'log-entry ' + message.logType;
+
+                    if (message.logType === 'structured') {
+                        renderStructured(div, message.content);
+                    } else {
+                        const prefix = message.logType === 'error' ? 'ERR: ' : 'RAW: ';
+                        const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
+                        div.textContent = prefix + content;
+                    }
+                    
+                    logsDiv.appendChild(div);
+                    window.scrollTo(0, document.body.scrollHeight);
+                }
+            });
+
+            // Handle REPL Input
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const cmd = input.value;
+                    vscode.postMessage({ type: 'evaluate', value: cmd });
+                    input.value = '';
+                }
+            });
+
+            function renderStructured(container, data) {
+                const header = document.createElement('div');
+                header.className = 'header';
+                const severity = (data.severity || 'info').toLowerCase();
+                
+                // Map severity to emoji
+                const emojiMap = {
+                    'debug': '🐛',
+                    'info': 'ℹ️',
+                    'warning': '⚠️',
+                    'warn': '⚠️',
+                    'error': '❌',
+                    'critical': '🚨'
+                };
+                const emoji = emojiMap[severity] || 'ℹ️';
+                
+                header.innerHTML = `<span class="badge severity-${severity}">${emoji}</span> <span>${escapeHtml(data.message)}</span>`;
+                
+                const details = document.createElement('div');
+                details.className = 'details';
+                
+                let jsonHtml = '';
+                for (const [key, val] of Object.entries(data)) {
+                    if (key === 'message' || key === 'severity') continue;
+                    jsonHtml += `<div><span class="json-key">${escapeHtml(key)}:</span> <span class="json-val">${escapeHtml(JSON.stringify(val))}</span></div>`;
+                }
+                details.innerHTML = jsonHtml;
+
+                header.addEventListener('click', () => {
+                    details.classList.toggle('open');
+                });
+
+                container.appendChild(header);
+                container.appendChild(details);
+            }
+            
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        })();
+    </script>
+</body>
+</html>

@@ -1,7 +1,29 @@
 const esbuild = require("esbuild");
+const fs = require("fs");
+const path = require("path");
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
+
+/**
+ * @type {import('esbuild').Plugin}
+ */
+const copyHtmlPlugin = {
+	name: 'copy-html',
+	setup(build) {
+		build.onEnd(() => {
+			const srcPath = path.join(__dirname, 'src', 'webview', 'superlogView.html');
+			const destDir = path.join(__dirname, 'dist', 'webview');
+			const destPath = path.join(destDir, 'superlogView.html');
+			
+			if (!fs.existsSync(destDir)) {
+				fs.mkdirSync(destDir, { recursive: true });
+			}
+			fs.copyFileSync(srcPath, destPath);
+			console.log('[copy] HTML copied to dist/webview/');
+		});
+	}
+};
 
 /**
  * @type {import('esbuild').Plugin}
@@ -38,6 +60,7 @@ async function main() {
 		external: ['vscode'],
 		logLevel: 'silent',
 		plugins: [
+			copyHtmlPlugin,
 			/* add to the end of plugins array */
 			esbuildProblemMatcherPlugin,
 		],
