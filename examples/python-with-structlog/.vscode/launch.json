@@ -1,0 +1,12 @@
+{
+    "configurations": [
+        {
+            "name": "Debug Logger Python",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/python_with_structlog/main.py",
+            "console": "internalConsole",
+        }
+    ]
+
+}

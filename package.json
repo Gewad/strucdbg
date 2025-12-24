@@ -9,16 +9,31 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
-  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onDebug"
+  ],
   "contributes": {
+    "views": {
+      "debug": [
+        {
+          "type": "webview",
+          "id": "superlog.logView",
+          "name": "Structured Logs"
+        }
+      ]
+    },
     "commands": [
+      {
+        "command": "strucdbg.showLogs",
+        "title": "Show Structured Logs"
+      },
       {
         "command": "strucdbg.helloWorld",
         "title": "Hello World"
       }
     ]
   },
+  "main": "./dist/extension.js",
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "npm run check-types && npm run lint && node esbuild.js",
