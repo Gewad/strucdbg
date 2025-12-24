@@ -24,10 +24,27 @@ def log_all():
         logger.exception("Caught an exception!", ev="exception_occurred")
 
 
+def nested_traceback(levels = 5):
+    if levels <= 0:
+        raise ValueError("Innermost exception")
+    else:
+        try:
+            nested_traceback(levels - 1)
+        except ValueError as e:
+            raise RuntimeError("Outer exception") from e
+
+
 if __name__ == "__main__":
     log_all()
 
     logger = logger.bind(operation_id="abcde")
     log_all()
+
+    logger = logger.unbind("operation_id")
+
+    try:
+        nested_traceback()
+    except RuntimeError:
+        logger.exception("Nested exception occurred!", ev="nested_exception")
 
     pass

@@ -57,6 +57,12 @@ export class SuperLogViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
+    public notifyNewSession(sessionName: string) {
+        console.log('[ViewProvider] New debug session started:', sessionName);
+        if (this._view) {
+            this._view.webview.postMessage({ type: 'new-session', sessionName });
+        }
+    }
     private _getHtmlForWebview(webview: vscode.Webview): string {
         // Try to load from src/ first (development), then from dist/ (production)
         const possiblePaths = [

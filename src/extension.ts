@@ -19,6 +19,14 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    // Track debug session starts
+    context.subscriptions.push(
+        vscode.debug.onDidStartDebugSession((session) => {
+            console.log('[Extension] Debug session started:', session.name);
+            provider.notifyNewSession(session.name);
+        })
+    );
+
     const trackerFactory = createDebugAdapterTrackerFactory(provider);
     vscode.debug.registerDebugAdapterTrackerFactory('*', trackerFactory);
 }

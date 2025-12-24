@@ -1,6 +1,7 @@
 {
   "name": "strucdbg",
   "displayName": "strucdbg",
+  "publisher": "gewad",
   "description": "Structured Log Debugger",
   "version": "0.0.1",
   "engines": {
