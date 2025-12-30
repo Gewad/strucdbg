@@ -18,6 +18,7 @@
         /* Structured Log Styles */
         .structured { display: flex; flex-direction: column; }
         .header { display: flex; align-items: center; cursor: pointer; }
+        .timestamp { margin-left: auto; opacity: 0.6; font-size: 0.85em; }
         .badge { 
             padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-right: 10px; font-weight: bold;
             text-transform: uppercase;
@@ -461,7 +462,11 @@
                 };
                 const emoji = emojiMap[severity] || 'ℹ️';
                 
-                header.innerHTML = `<span class="badge severity-${severity}">${emoji}</span> <span>${escapeHtml(data.message)}</span> <span style="opacity: 0.6; margin-left: 10px; font-size: 0.85em;">[${escapeHtml(data.operation_id)}]</span>`;
+                // Add timestamp (if present) on the far right and show operation id inline
+                const ts = formatTimestamp(data);
+                const opSpan = `<span style="opacity: 0.6; margin-left: 10px; font-size: 0.85em;">[${escapeHtml(data.operation_id)}]</span>`;
+                const tsSpan = ts ? `<span class="timestamp">${escapeHtml(ts)}</span>` : '';
+                header.innerHTML = `<span class="badge severity-${severity}">${emoji}</span> <span>${escapeHtml(data.message)}</span> ${opSpan} ${tsSpan}`;
                 
                 header.addEventListener('click', () => {
                     const isOpen = subLogsContainer.style.display !== 'none';
@@ -496,27 +501,31 @@
                 };
                 const emoji = emojiMap[severity] || 'ℹ️';
                 
-                header.innerHTML = `<span class="badge severity-${severity}">${emoji}</span> <span>${escapeHtml(data.message)}</span>`;
-                
+                // Add timestamp (if present) on the far right of header
+                const ts = formatTimestamp(data);
+                const tsSpanHtml = ts ? `<span class="timestamp">${escapeHtml(ts)}</span>` : '';
+                header.innerHTML = `<span class="badge severity-${severity}">${emoji}</span> <span>${escapeHtml(data.message)}</span> ${tsSpanHtml}`;
+
                 const details = document.createElement('div');
                 details.className = 'details';
-                
-                // Check if there's an exception field
+
+                // Always render exceptions (tracebacks) if present
                 if (data.exception) {
                     const exceptionDiv = renderException(data.exception);
                     details.appendChild(exceptionDiv);
                 }
-                
-                // Render other fields
-                let jsonHtml = '';
-                for (const [key, val] of Object.entries(data)) {
-                    if (key === 'message' || key === 'severity' || key === 'exception') continue;
-                    jsonHtml += `<div><span class="json-key">${escapeHtml(key)}:</span> <span class="json-val">${escapeHtml(JSON.stringify(val))}</span></div>`;
-                }
-                if (jsonHtml) {
-                    const jsonDiv = document.createElement('div');
-                    jsonDiv.innerHTML = jsonHtml;
-                    details.appendChild(jsonDiv);
+
+                // Render the `metadata` field (if present) as separate key entries
+                if (data.metadata && typeof data.metadata === 'object') {
+                    let metaHtml = '';
+                    for (const [mKey, mVal] of Object.entries(data.metadata)) {
+                        metaHtml += `<div><span class="json-key">${escapeHtml(mKey)}:</span> <span class="json-val">${escapeHtml(JSON.stringify(mVal))}</span></div>`;
+                    }
+                    if (metaHtml) {
+                        const metaDiv = document.createElement('div');
+                        metaDiv.innerHTML = metaHtml;
+                        details.appendChild(metaDiv);
+                    }
                 }
 
                 header.addEventListener('click', () => {
@@ -525,6 +534,37 @@
 
                 container.appendChild(header);
                 container.appendChild(details);
+            }
+
+            // Helper: format timestamp from common possible fields
+            function formatTimestamp(data) {
+                const candidates = [data.timestamp, data.time, data.ts, data.t, data.time_iso, data.ts_iso];
+                for (const c of candidates) {
+                    if (!c && c !== 0) continue;
+                    try {
+                        // If it's numeric (epoch seconds or ms)
+                        if (typeof c === 'number') {
+                            // Heuristic: if > 1e12 treat as ms, else seconds
+                            const ms = c > 1e12 ? c : (c > 1e10 ? c : c * 1000);
+                            const d = new Date(ms);
+                            if (!isNaN(d.getTime())) return d.toLocaleTimeString();
+                        }
+                        if (typeof c === 'string') {
+                            // Try parse as ISO or numeric string
+                            const n = Number(c);
+                            if (!Number.isNaN(n)) {
+                                const ms = n > 1e12 ? n : (n > 1e10 ? n : n * 1000);
+                                const d = new Date(ms);
+                                if (!isNaN(d.getTime())) return d.toLocaleTimeString();
+                            }
+                            const d2 = new Date(c);
+                            if (!isNaN(d2.getTime())) return d2.toLocaleTimeString();
+                        }
+                    } catch (e) {
+                        // ignore and try next
+                    }
+                }
+                return '';
             }
 
             function renderException(exceptionData) {
