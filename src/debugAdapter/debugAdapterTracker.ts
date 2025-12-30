@@ -1,11 +1,44 @@
 import * as vscode from 'vscode';
-import { SuperLogViewProvider } from '../webview/SuperLogViewProvider';
+import { IWindowManager, StructuredLogPayload } from '../webview/windowManager';
+import { goParser } from './parsers/goParser';
+import { pythonParser } from './parsers/pythonParser';
+import { defaultParser } from './parsers/defaultParser';
 
-export function createDebugAdapterTrackerFactory(provider: SuperLogViewProvider): vscode.DebugAdapterTrackerFactory {
+// Parse a Go runtime stack string into the exception structure expected by the webview.
+// Example Go stack string:
+// goroutine 1 [running]:
+// runtime/debug.Stack()
+//	/Users/.../runtime/debug/stack.go:26 +0x64
+// main.main()
+//	/Users/.../main.go:50 +0xf60
+// Language-specific stack parsers are implemented in separate modules
+
+export function createDebugAdapterTrackerFactory(manager: IWindowManager): vscode.DebugAdapterTrackerFactory {
     return {
         createDebugAdapterTracker(session: vscode.DebugSession) {
-            console.log('[DebugAdapter] Tracker created for session:', session.name, 'id:', session.id);
+            console.log('[DebugAdapter] Tracker created for session:', session.name, 'id:', session.id, 'type:', session.type);
             const sessionId = session.id;
+            
+            // Determine likely language for this debug session so we can parse stack strings.
+            function detectLanguageFromSession(s: vscode.DebugSession) {
+                const cfgAny: any = (s as any).configuration || {};
+                const type = (s.type || cfgAny.type || '').toString().toLowerCase();
+                const program = (cfgAny.program || cfgAny.file || '').toString();
+
+                if (/go|delve|dlv/.test(type)) return 'go';
+                if (/python/.test(type)) return 'python';
+                if (/node|javascript|js/.test(type)) return 'javascript';
+                if (/java/.test(type)) return 'java';
+                if (/rust|codelldb|lldb/.test(type)) return 'rust';
+
+                if (program.endsWith('.go')) return 'go';
+                if (program.endsWith('.py')) return 'python';
+
+                return s.type;
+            }
+
+            const sessionLanguage = detectLanguageFromSession(session);
+            console.log('[DebugAdapter] Detected session language:', sessionLanguage, 'sessionId:', sessionId);
             return {
                 onDidSendMessage: (message) => {
                     console.log('[DebugAdapter] Message received - type:', message.type, 'event:', message.event);
@@ -32,37 +65,33 @@ export function createDebugAdapterTrackerFactory(provider: SuperLogViewProvider)
                                 // Check if it's a valid object (and not null)
                                 if (typeof parsed === 'object' && parsed !== null) {
                                     console.log('[DebugAdapter] Valid object detected, keys:', Object.keys(parsed).join(', '));
-                                    
-                                    // --- NORMALIZATION STEP ---
-                                    // 1. Determine Severity (fallback to 'info')
-                                    //    Look for 'severity', 'level', 'lvl', or default to 'info'
-                                    const rawSeverity = parsed.severity || parsed.level || parsed.lvl || 'info';
-                                    
-                                    // 2. Determine Message (fallback to raw JSON string if missing)
-                                    //    Look for 'message', 'msg', 'event', 'text'
-                                    const rawMessage = parsed.message || parsed.msg || parsed.event || parsed.text || JSON.stringify(parsed);
 
-                                    // 3. Create the Standardized Object
-                                    //    We preserve the original keys (...parsed) so you don't lose data
-                                    const normalized = {
-                                        ...parsed,
-                                        severity: rawSeverity,
-                                        message: rawMessage
-                                    };
-                                    console.log('[DebugAdapter] Normalized - severity:', rawSeverity, 'message:', rawMessage, 'sessionId:', sessionId);
+                                    // Choose parser by detected language
+                                    let parser: any = defaultParser;
+                                    if (sessionLanguage === 'go') {
+                                        parser = goParser;
+                                    } else if (sessionLanguage === 'python') {
+                                        parser = pythonParser;
+                                    }
 
-                                    // Send to view with session ID
-                                    console.log('[DebugAdapter] Calling addLog with type: structured, sessionId:', sessionId);
-                                    provider.addLog(normalized, 'structured', sessionId);
+                                    const payload: StructuredLogPayload | null = parser.parse(parsed);
+                                    if (payload) {
+                                        console.log('[DebugAdapter] Parser produced StructuredLogPayload, sending to window manager');
+                                        manager.addStructuredLog(payload, sessionId);
+                                        continue;
+                                    }
+
+                                    console.log('[DebugAdapter] Parser could not produce StructuredLogPayload, calling window manager addRawLog, sessionId:', sessionId);
+                                    manager.addRawLog(trimmedLine, sessionId);
                                 } else {
                                     // Valid JSON but it's a primitive (like "true" or number)
-                                    console.log('[DebugAdapter] JSON primitive detected, calling addLog with type: raw');
-                                    provider.addLog(trimmedLine, 'raw', sessionId);
+                                    console.log('[DebugAdapter] JSON primitive detected, calling window manager addRawLog, sessionId:', sessionId);
+                                    manager.addRawLog(trimmedLine, sessionId);
                                 }
                             } catch (e) {
                                 // Not JSON -> treat as raw text
-                                console.log('[DebugAdapter] Not JSON, calling addLog with type: raw');
-                                provider.addLog(trimmedLine, 'raw', sessionId);
+                                console.log('[DebugAdapter] Not JSON, calling window manager addRawLog, sessionId:', sessionId);
+                                manager.addRawLog(trimmedLine, sessionId);
                             }
                         }
                     }
