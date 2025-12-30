@@ -1,12 +1,14 @@
 package main
 
 import (
-	"errors"
 	"log/slog"
 	"os"
-	"runtime/debug"
 	"time"
+
+	"github.com/pkg/errors"
 )
+
+var StackTraceExampleErorr = errors.New("stack trace inner example error")
 
 func main() {
 	// Configure slog to output JSON to stdout
@@ -35,19 +37,18 @@ func main() {
 	loggerWithOp.Warn("Slow performance detected", "step", 4, "latency_ms", 250)
 	loggerWithOp.Info("Operation complete", "step", 5, "duration_ms", 1200)
 
-	// Nested error handling (always include stack)
+	// Nested error handling (show innermost stack captured at error creation)
 	if err := performOperation(); err != nil {
 		slog.Error("Operation failed",
 			"error", err.Error(),
-			"stack", string(debug.Stack()),
 			"ev", "operation_error")
 	}
 
-	// Stacktrace example (always include stack)
-	err := errors.New("sample error for stacktrace")
+	// Stacktrace example (always include stack). Use NewStackError so this
+	// error carries a captured stack trace at its creation point.
+	err := StackTraceExampleErorr
 	slog.Error("An error occurred with stacktrace",
 		"error", err.Error(),
-		"stack", string(debug.Stack()),
 		"ev", "stacktrace_example")
 
 	// Continuous logging loop
@@ -78,18 +79,18 @@ func performOperation() error {
 
 func level1() error {
 	if err := level2(); err != nil {
-		return errors.New("level1 failed: " + err.Error())
+		return errors.Wrap(err, "level1 failed")
 	}
 	return nil
 }
 
 func level2() error {
 	if err := level3(); err != nil {
-		return errors.New("level2 failed: " + err.Error())
+		return errors.Wrap(err, "level2 failed")
 	}
 	return nil
 }
 
 func level3() error {
-	return errors.New("innermost error occurred")
+	return StackTraceExampleErorr
 }
