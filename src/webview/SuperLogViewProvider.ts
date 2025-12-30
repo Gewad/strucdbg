@@ -4,6 +4,9 @@ import * as path from 'path';
 
 export class SuperLogViewProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
+    // Keep track of known debug sessions so the webview can be informed
+    // when it initializes (in case sessions started while the view was closed)
+    private _knownSessions: Map<string, string> = new Map();
 
     constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -23,6 +26,15 @@ export class SuperLogViewProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
         console.log('[ViewProvider] HTML set, webview should be ready');
+        this._view = webviewView;
+
+        // Inform the webview of any sessions that were started while it was closed
+        if (this._knownSessions.size > 0) {
+            console.log('[ViewProvider] Notifying webview of known sessions:', Array.from(this._knownSessions.keys()).join(', '));
+            for (const [sessionId, sessionName] of this._knownSessions.entries()) {
+                this._view.webview.postMessage({ type: 'new-session', sessionId, sessionName });
+            }
+        }
         
         // Send a test message to confirm webview is working
         setTimeout(() => {
@@ -92,12 +104,16 @@ export class SuperLogViewProvider implements vscode.WebviewViewProvider {
             console.log('[ViewProvider] Posting message to webview');
             this._view.webview.postMessage({ type: 'new-log', logType: type, content: data, sessionId });
         } else {
-            console.log('[ViewProvider] WARNING: View not initialized, message lost');
+            // If the view isn't initialized yet, just log locally and keep a record
+            console.log('[ViewProvider] WARNING: View not initialized, message will be lost unless the session is replayed');
         }
     }
 
     public notifyNewSession(sessionId: string, sessionName: string) {
         console.log('[ViewProvider] New debug session started:', sessionName, 'id:', sessionId);
+        // Remember the session so that if the webview isn't open yet we can
+        // notify it when it initializes.
+        this._knownSessions.set(sessionId, sessionName);
         if (this._view) {
             this._view.webview.postMessage({ type: 'new-session', sessionId, sessionName });
         }
@@ -107,6 +123,13 @@ export class SuperLogViewProvider implements vscode.WebviewViewProvider {
         console.log('[ViewProvider] Debug session ended:', sessionId);
         if (this._view) {
             this._view.webview.postMessage({ type: 'session-ended', sessionId });
+        }
+        // Keep ended sessions in known list for a short while; remove to avoid memory leak
+        if (this._knownSessions.has(sessionId)) {
+            // Marked ended - we still keep the name for potential replay, but remove after a delay
+            setTimeout(() => {
+                this._knownSessions.delete(sessionId);
+            }, 5 * 60 * 1000); // remove after 5 minutes
         }
     }
     private _getHtmlForWebview(webview: vscode.Webview): string {
