@@ -59,6 +59,7 @@ func main() {
 	loggerWithOp.Debug("Starting operation", zap.Int("step", 1))
 	loggerWithOp.Info("Processing data", zap.Int("step", 2), zap.Int("records", 100))
 	loggerWithOp.Info("Operation halfway", zap.Int("step", 3), zap.Int("progress", 50))
+	time.Sleep(2 * time.Second)
 	loggerWithOp.Warn("Slow performance detected", zap.Int("step", 4), zap.Int("latency_ms", 250))
 	loggerWithOp.Info("Operation complete", zap.Int("step", 5), zap.Int("duration_ms", 1200))
 
