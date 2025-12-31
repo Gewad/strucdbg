@@ -7,9 +7,14 @@
     <style>
         body { 
             font-family: var(--vscode-editor-font-family); 
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
             padding: 10px; 
             color: var(--vscode-editor-foreground);
             background-color: var(--vscode-editor-background);
+            box-sizing: border-box;
         }
         .log-entry { margin-bottom: 5px; border-bottom: 1px solid var(--vscode-panel-border); padding: 4px; }
         .raw { opacity: 0.8; white-space: pre-wrap; }
@@ -114,19 +119,19 @@
             color: var(--vscode-input-foreground);
             border: 1px solid var(--vscode-input-border);
         }
-        #status { 
-            position: fixed; top: 5px; right: 5px; 
-            padding: 3px 8px; background: var(--vscode-badge-background); 
-            color: var(--vscode-badge-foreground); border-radius: 3px; font-size: 0.8em;
-        }
+        /* status counter removed */
 
         /* Tabs */
         #tabs-container {
+            position: relative;
+            z-index: 999;
+            background: var(--vscode-editor-background);
             display: flex;
             gap: 5px;
             margin-bottom: 10px;
             border-bottom: 1px solid var(--vscode-panel-border);
             padding-bottom: 5px;
+            padding-top: 6px;
         }
         .tab {
             padding: 5px 12px;
@@ -153,9 +158,31 @@
             opacity: 1;
             color: var(--vscode-errorForeground);
         }
+        /* Small spinner to indicate running session */
+        .tab-spinner {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border: 1px solid rgba(128,128,128,0.3);
+            border-top-color: var(--vscode-button-foreground);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 4px;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
         .session-content {
             display: none;
-            margin-bottom: 60px;
+            margin-bottom: 8px;
+        }
+        /* Make the sessions area scrollable while top and input remain fixed */
+        #sessions-container {
+            flex: 1 1 auto;
+            overflow: auto;
+            padding-bottom: 60px; /* leave space for the input container */
         }
         .session-content.active {
             display: block;
@@ -163,7 +190,6 @@
     </style>
 </head>
 <body>
-    <div id="status">Ready</div>
     <div id="tabs-container"></div>
     <div id="sessions-container"></div>
     <div id="input-container">
@@ -173,8 +199,6 @@
     <script>
         (function() {
             // Initialize immediately
-            const status = document.getElementById('status');
-            status.textContent = 'Initializing...';
             
             const vscode = acquireVsCodeApi();
             const tabsContainer = document.getElementById('tabs-container');
@@ -188,15 +212,14 @@
             const pendingCodeRequests = new Map(); // requestId -> codeDiv element
             let autoScroll = true; // Auto-scroll enabled by default
 
-            status.textContent = 'Webview Ready';
-
             // Detect user scrolling up to disable auto-scroll
             let lastScrollTop = 0;
             let autoscrollCutoff = 8;
-            window.addEventListener('scroll', () => {
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                const scrollHeight = document.documentElement.scrollHeight;
-                const clientHeight = document.documentElement.clientHeight;
+            // Listen on the sessions container (it is now the scrollable area)
+            sessionsContainer.addEventListener('scroll', () => {
+                const scrollTop = sessionsContainer.scrollTop;
+                const scrollHeight = sessionsContainer.scrollHeight;
+                const clientHeight = sessionsContainer.clientHeight;
                 const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
 
                 // If user scrolled up (not at bottom), disable auto-scroll
@@ -236,11 +259,12 @@
                 tab.innerHTML = `<span>${escapeHtml(sessionName)}</span>`;
                 
                 if (!isWelcome) {
+                    // Create close button (hidden while session is active)
                     const closeBtn = document.createElement('span');
                     closeBtn.className = 'tab-close';
                     closeBtn.textContent = '×';
-                    closeBtn.style.opacity = '0.3';
-                    closeBtn.style.cursor = 'not-allowed';
+                    closeBtn.style.display = 'none';
+                    closeBtn.style.cursor = 'pointer';
                     closeBtn.onclick = (e) => {
                         e.stopPropagation();
                         const session = sessions.get(sessionId);
@@ -248,6 +272,14 @@
                             closeSession(sessionId);
                         }
                     };
+
+                    // Create spinner to indicate running session
+                    const spinner = document.createElement('span');
+                    spinner.className = 'tab-spinner';
+                    spinner.title = 'Session running';
+                    spinner.style.display = 'inline-block';
+
+                    tab.appendChild(spinner);
                     tab.appendChild(closeBtn);
                 }
                 
@@ -272,7 +304,9 @@
                     operationGroups: new Map(),
                     name: sessionName,
                     isActive: true,
-                    closeBtn: !isWelcome ? tab.querySelector('.tab-close') : null
+                    // store refs to spinner and close button for toggling
+                    closeBtn: !isWelcome ? tab.querySelector('.tab-close') : null,
+                    spinner: !isWelcome ? tab.querySelector('.tab-spinner') : null
                 });
                 
                 switchToSession(sessionId);
@@ -323,12 +357,16 @@
                         message.sessionId
                     );
                 } else if (message.type === 'session-ended') {
-                    // Mark session as inactive and enable close button
+                    // Mark session as inactive: hide spinner, show close button
                     const session = sessions.get(message.sessionId);
                     if (session) {
                         session.isActive = false;
+                        if (session.spinner) {
+                            session.spinner.style.display = 'none';
+                        }
                         if (session.closeBtn) {
-                            session.closeBtn.style.opacity = '0.7';
+                            session.closeBtn.style.display = 'inline-block';
+                            session.closeBtn.style.opacity = '0.9';
                             session.closeBtn.style.cursor = 'pointer';
                         }
                     }
@@ -346,7 +384,6 @@
                     }
                 } else if (message.type === 'new-log') {
                     messageCount++;
-                    status.textContent = 'Messages: ' + messageCount;
                     
                     // Route raw and error logs to Welcome tab
                     let sessionId;
@@ -381,7 +418,8 @@
                         
                         session.logsDiv.appendChild(div);
                         if (autoScroll) {
-                            window.scrollTo(0, document.body.scrollHeight);
+                            // Scroll the scrollable sessions container to bottom
+                            sessionsContainer.scrollTop = sessionsContainer.scrollHeight;
                         }
                     }
                 }
@@ -434,7 +472,8 @@
                 group.subLogs.appendChild(subLogDiv);
                 
                 if (autoScroll) {
-                    window.scrollTo(0, document.body.scrollHeight);
+                    // Scroll the scrollable sessions container to bottom
+                    sessionsContainer.scrollTop = sessionsContainer.scrollHeight;
                 }
             }
 
