@@ -24,15 +24,47 @@
         .structured { display: flex; flex-direction: column; }
         .header { display: flex; align-items: center; cursor: pointer; }
         .timestamp { margin-left: auto; opacity: 0.6; font-size: 0.85em; }
-        .badge { 
-            padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-right: 10px; font-weight: bold;
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px; /* make badge a square */
+            height: 20px;
+            padding: 0; /* no internal padding so icon is centered */
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-right: 10px;
+            font-weight: bold;
             text-transform: uppercase;
+            box-sizing: border-box;
         }
+        /* Ensure any inline SVG inside a badge sizes correctly and inherits text color */
+        .badge svg {
+            width: 12px; /* smaller icon */
+            height: 12px;
+            margin: 0; /* no extra margin inside square */
+            fill: currentColor;
+            display: block;
+        }
+        .badge .icon-placeholder {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin: 0;
+        }
+        .severity-info .icon-placeholder { background: var(--vscode-progressBar-background); }
+        .severity-debug .icon-placeholder { background: var(--vscode-charts-blue); }
+        .severity-error .icon-placeholder { background: var(--vscode-errorForeground); }
+        .severity-critical .icon-placeholder { background: var(--vscode-errorForeground); }
+        /* Use an explicit orange for warnings to avoid transparent theme variables */
+        .severity-warning .icon-placeholder { background: #ff9800; }
         .severity-info { background-color: var(--vscode-progressBar-background); color: white; }
         .severity-debug { background-color: var(--vscode-charts-blue); color: white; }
         .severity-error { background-color: var(--vscode-errorForeground); color: white; }
         .severity-critical { background-color: var(--vscode-errorForeground); color: white; }
-        .severity-warn { background-color: var(--vscode-editorWarning-foreground); color: white; }
+        /* Explicit orange background and dark text for better contrast */
+        .severity-warning { background-color: #ff9800; color: white; }
         
         .details { margin-left: 20px; display: none; background: rgba(128,128,128, 0.1); padding: 5px; }
         .details.open { display: block; }
@@ -94,7 +126,7 @@
             margin-top: 3px;
             padding: 4px 8px;
             background: rgba(0,0,0,0.3);
-            border-left: 2px solid var(--vscode-editorWarning-foreground);
+            border-left: 2px solid #ff9800;
             font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
             font-size: 0.85em;
             color: var(--vscode-editor-foreground);
@@ -491,21 +523,17 @@
                 header.className = 'header';
                 const severity = (data.severity || 'info').toLowerCase();
                 
-                const emojiMap = {
-                    'debug': '🐛',
-                    'info': 'ℹ️',
-                    'warning': '⚠️',
-                    'warn': '⚠️',
-                    'error': '❌',
-                    'critical': '🚨'
-                };
-                const emoji = emojiMap[severity] || 'ℹ️';
-                
+                // Use inline SVGs injected by the provider; fall back to a colored placeholder.
+                const svgMap = window.__ICON_SVGS__ || {};
+                const resolvedSeverity = severity === 'warn' ? 'warning' : severity;
+                const iconSvg = svgMap[resolvedSeverity] || svgMap[severity];
+                const iconHtml = iconSvg ? iconSvg : `<span class="icon-placeholder"></span>`;
+
                 // Add timestamp (if present) on the far right and show operation id inline
                 const ts = formatTimestamp(data);
                 const opSpan = `<span style="opacity: 0.6; margin-left: 10px; font-size: 0.85em;">[${escapeHtml(data.operation_id)}]</span>`;
                 const tsSpan = ts ? `<span class="timestamp">${escapeHtml(ts)}</span>` : '';
-                header.innerHTML = `<span class="badge severity-${severity}">${emoji}</span> <span>${escapeHtml(data.message)}</span> ${opSpan} ${tsSpan}`;
+                header.innerHTML = `<span class="badge severity-${severity}">${iconHtml}</span> <span>${escapeHtml(data.message)}</span> ${opSpan} ${tsSpan}`;
                 
                 header.addEventListener('click', () => {
                     const isOpen = subLogsContainer.style.display !== 'none';
@@ -529,21 +557,16 @@
                 header.className = 'header';
                 const severity = (data.severity || 'info').toLowerCase();
                 
-                // Map severity to emoji
-                const emojiMap = {
-                    'debug': '🐛',
-                    'info': 'ℹ️',
-                    'warning': '⚠️',
-                    'warn': '⚠️',
-                    'error': '❌',
-                    'critical': '🚨'
-                };
-                const emoji = emojiMap[severity] || 'ℹ️';
-                
+                // Use inline SVGs injected by the provider; fall back to a colored placeholder.
+                const svgMap = window.__ICON_SVGS__ || {};
+                const resolvedSeverity = severity === 'warn' ? 'warning' : severity;
+                const iconSvg = svgMap[resolvedSeverity] || svgMap[severity];
+                const iconHtml = iconSvg ? iconSvg : `<span class="icon-placeholder"></span>`;
+
                 // Add timestamp (if present) on the far right of header
                 const ts = formatTimestamp(data);
                 const tsSpanHtml = ts ? `<span class="timestamp">${escapeHtml(ts)}</span>` : '';
-                header.innerHTML = `<span class="badge severity-${severity}">${emoji}</span> <span>${escapeHtml(data.message)}</span> ${tsSpanHtml}`;
+                header.innerHTML = `<span class="badge severity-${severity}">${iconHtml}</span> <span>${escapeHtml(data.message)}</span> ${tsSpanHtml}`;
 
                 const details = document.createElement('div');
                 details.className = 'details';

@@ -42,7 +42,48 @@ export class SuperLogViewProvider implements vscode.WebviewViewProvider {
         for (const htmlPath of possiblePaths) {
             if (fs.existsSync(htmlPath)) {
                 console.log('[ViewProvider] Loading HTML from:', htmlPath);
-                return fs.readFileSync(htmlPath, 'utf8');
+                let html = fs.readFileSync(htmlPath, 'utf8');
+
+                // Read inline SVG contents for expected severities and inject them
+                // into the HTML. Inline SVGs can inherit `currentColor` so their
+                // color will match surrounding text when the SVG uses `fill="currentColor"` or `stroke="currentColor"`.
+                const severities = ['debug', 'info', 'warning', 'error', 'critical'];
+                const svgMap: Record<string, string> = {};
+
+                for (const s of severities) {
+                    // Try src (dev) first, then dist (built)
+                    const candidates = [
+                        path.join(this._extensionUri.fsPath, 'src', 'webview', 'assets', `${s}.svg`),
+                        path.join(this._extensionUri.fsPath, 'dist', 'webview', 'assets', `${s}.svg`)
+                    ];
+                    for (const p of candidates) {
+                        try {
+                            if (fs.existsSync(p)) {
+                                let svg = fs.readFileSync(p, 'utf8');
+                                // Strip XML prolog if present to avoid duplication when injected
+                                svg = svg.replace(/^\s*<\?xml[^>]*>\s*/i, '');
+                                svgMap[s] = svg;
+                                break;
+                            }
+                        } catch (e) {
+                            // ignore and try next
+                        }
+                    }
+                }
+
+                // Update Content-Security-Policy to allow inline SVGs and keep inline scripts/styles.
+                try {
+                    const cspMeta = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data:; style-src 'unsafe-inline'; script-src 'unsafe-inline';">`;
+                    html = html.replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/i, cspMeta);
+                } catch (e) {
+                    // ignore
+                }
+
+                // Inject SVGs (raw markup) into the HTML so the webview can render them inline.
+                const injection = `\n<script>window.__ICON_SVGS__ = ${JSON.stringify(svgMap)};</script>\n`;
+                html = html.replace(/<\/head>/i, injection + '</head>');
+
+                return html;
             }
         }
 
