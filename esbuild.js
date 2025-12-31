@@ -28,6 +28,50 @@ const copyHtmlPlugin = {
 /**
  * @type {import('esbuild').Plugin}
  */
+const copyAssetsPlugin = {
+	name: 'copy-assets',
+	setup(build) {
+		build.onEnd(() => {
+			const srcAssetsDir = path.join(__dirname, 'src', 'webview', 'assets');
+			const destAssetsDir = path.join(__dirname, 'dist', 'webview', 'assets');
+
+			if (!fs.existsSync(srcAssetsDir)) {
+				// nothing to copy
+				return;
+			}
+			if (!fs.existsSync(destAssetsDir)) {
+				fs.mkdirSync(destAssetsDir, { recursive: true });
+			}
+
+			const entries = fs.readdirSync(srcAssetsDir);
+			entries.forEach((name) => {
+				const srcPath = path.join(srcAssetsDir, name);
+				const destPath = path.join(destAssetsDir, name);
+				const stat = fs.statSync(srcPath);
+				if (stat.isFile()) {
+					fs.copyFileSync(srcPath, destPath);
+				} else if (stat.isDirectory()) {
+					// copy directory recursively
+					const copyDir = (from, to) => {
+						if (!fs.existsSync(to)) fs.mkdirSync(to, { recursive: true });
+						fs.readdirSync(from).forEach((entry) => {
+							const f = path.join(from, entry);
+							const t = path.join(to, entry);
+							if (fs.statSync(f).isDirectory()) copyDir(f, t);
+							else fs.copyFileSync(f, t);
+						});
+					};
+					copyDir(srcPath, destPath);
+				}
+			});
+			console.log('[copy] assets copied to dist/webview/assets/');
+		});
+	}
+};
+
+/**
+ * @type {import('esbuild').Plugin}
+ */
 const esbuildProblemMatcherPlugin = {
 	name: 'esbuild-problem-matcher',
 
@@ -61,6 +105,7 @@ async function main() {
 		logLevel: 'silent',
 		plugins: [
 			copyHtmlPlugin,
+			copyAssetsPlugin,
 			/* add to the end of plugins array */
 			esbuildProblemMatcherPlugin,
 		],
