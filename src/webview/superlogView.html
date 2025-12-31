@@ -470,22 +470,47 @@
                     subLogsContainer.className = 'details';
                     subLogsContainer.style.display = 'none';
                     
-                    operationGroups.set(opId, {
+                    // store the group's current highest-severity (start with this log's severity)
+                    const initialSeverity = getResolvedSeverityFromData(data);
+                    const formattedTs = formatTimestamp(data) || '';
+                    const groupObj = {
                         container: groupDiv,
                         subLogs: subLogsContainer,
-                        count: 0
-                    });
+                        count: 0,
+                        severity: initialSeverity,
+                        opId: opId,
+                        firstMessage: data.message || '',
+                        lastMessage: data.message || '',
+                        firstTs: formattedTs,
+                        lastTs: formattedTs,
+                        header: null
+                    };
+                    operationGroups.set(opId, groupObj);
                     
-                    renderOperationHeader(groupDiv, data, subLogsContainer);
+                    renderOperationHeader(groupObj, data, subLogsContainer);
                     groupDiv.appendChild(subLogsContainer);
                     session.logsDiv.appendChild(groupDiv);
                 } else {
                     // Add to existing operation group
                     const group = operationGroups.get(opId);
+
+                    // Add to existing operation group
+                    // Update group's last message/timestamp and severity as needed
+                    const incomingSeverity = getResolvedSeverityFromData(data);
+                    const formattedTs = formatTimestamp(data) || '';
+                    if (severityRank(incomingSeverity) > severityRank(group.severity)) {
+                        group.severity = incomingSeverity;
+                    }
+                    group.lastMessage = data.message || group.lastMessage;
+                    if (formattedTs) group.lastTs = formattedTs;
+
                     group.count++;
+
+                    // Update header to reflect new messages/timestamps and severity
+                    updateOperationHeader(group);
                     
-                    // Update header to show count
-                    const header = group.container.querySelector('.header');
+                    // Ensure count badge text is correct (updateOperationHeader preserves badge)
+                    const header = group.header || group.container.querySelector('.header');
                     const countBadge = header.querySelector('.op-count') || createCountBadge();
                     if (!header.querySelector('.op-count')) {
                         header.appendChild(countBadge);
@@ -518,29 +543,89 @@
                 return badge;
             }
 
-            function renderOperationHeader(container, data, subLogsContainer) {
+            // Resolve severity from incoming structured log data and normalize common variants
+            function getResolvedSeverityFromData(data) {
+                try {
+                    const raw = (data && (data.severity || data.level || 'info')) || 'info';
+                    const s = String(raw).toLowerCase();
+                    return s === 'warn' ? 'warning' : s;
+                } catch (e) {
+                    return 'info';
+                }
+            }
+
+            // Numerical rank for severity comparison (higher = more severe)
+            function severityRank(sev) {
+                switch ((sev || '').toLowerCase()) {
+                    case 'debug': return 0;
+                    case 'info': return 1;
+                    case 'warning': return 2;
+                    case 'error': return 3;
+                    case 'critical': return 4;
+                    default: return 1;
+                }
+            }
+
+            function renderOperationHeader(group, data, subLogsContainer) {
+                const container = group.container;
                 const header = document.createElement('div');
                 header.className = 'header';
-                const severity = (data.severity || 'info').toLowerCase();
-                
+                const resolvedSeverity = group.severity || getResolvedSeverityFromData(data);
+
                 // Use inline SVGs injected by the provider; fall back to a colored placeholder.
                 const svgMap = window.__ICON_SVGS__ || {};
-                const resolvedSeverity = severity === 'warn' ? 'warning' : severity;
-                const iconSvg = svgMap[resolvedSeverity] || svgMap[severity];
+                const iconSvg = svgMap[resolvedSeverity] || svgMap[resolvedSeverity === 'warning' ? 'warn' : resolvedSeverity];
                 const iconHtml = iconSvg ? iconSvg : `<span class="icon-placeholder"></span>`;
 
-                // Add timestamp (if present) on the far right and show operation id inline
-                const ts = formatTimestamp(data);
+                // Build first -> last message and timestamps
+                const firstMsg = group.firstMessage || '';
+                const lastMsg = group.lastMessage || firstMsg;
+                const msgHtml = (firstMsg && lastMsg && firstMsg !== lastMsg) ? `${escapeHtml(firstMsg)} -> ${escapeHtml(lastMsg)}` : escapeHtml(firstMsg || lastMsg);
+
+                const firstTs = group.firstTs || '';
+                const lastTs = group.lastTs || firstTs;
+                const tsHtml = (firstTs && lastTs && firstTs !== lastTs) ? `${escapeHtml(firstTs)} -> ${escapeHtml(lastTs)}` : (firstTs || lastTs ? escapeHtml(firstTs || lastTs) : '');
+
                 const opSpan = `<span style="opacity: 0.6; margin-left: 10px; font-size: 0.85em;">[${escapeHtml(data.operation_id)}]</span>`;
-                const tsSpan = ts ? `<span class="timestamp">${escapeHtml(ts)}</span>` : '';
-                header.innerHTML = `<span class="badge severity-${severity}">${iconHtml}</span> <span>${escapeHtml(data.message)}</span> ${opSpan} ${tsSpan}`;
-                
+                const tsSpan = tsHtml ? `<span class="timestamp">${tsHtml}</span>` : '';
+
+                header.innerHTML = `<span class="badge severity-${resolvedSeverity}">${iconHtml}</span> <span>${msgHtml}</span> ${opSpan} ${tsSpan}`;
+
                 header.addEventListener('click', () => {
                     const isOpen = subLogsContainer.style.display !== 'none';
                     subLogsContainer.style.display = isOpen ? 'none' : 'block';
                 });
-                
+
                 container.appendChild(header);
+                group.header = header;
+            }
+
+            // Update an existing operation header in-place preserving count badge
+            function updateOperationHeader(group) {
+                const header = group.header || group.container.querySelector('.header');
+                if (!header) return;
+                const resolvedSeverity = group.severity || 'info';
+                const svgMap = window.__ICON_SVGS__ || {};
+                const iconSvg = svgMap[resolvedSeverity] || svgMap[resolvedSeverity === 'warning' ? 'warn' : resolvedSeverity];
+                const iconHtml = iconSvg ? iconSvg : `<span class="icon-placeholder"></span>`;
+
+                const firstMsg = group.firstMessage || '';
+                const lastMsg = group.lastMessage || firstMsg;
+                const msgHtml = (firstMsg && lastMsg && firstMsg !== lastMsg) ? `${escapeHtml(firstMsg)} -> ${escapeHtml(lastMsg)}` : escapeHtml(firstMsg || lastMsg);
+
+                const firstTs = group.firstTs || '';
+                const lastTs = group.lastTs || firstTs;
+                const tsHtml = (firstTs && lastTs && firstTs !== lastTs) ? `${escapeHtml(firstTs)} -> ${escapeHtml(lastTs)}` : (firstTs || lastTs ? escapeHtml(firstTs || lastTs) : '');
+
+                // Preserve existing op-count element if present
+                const countBadge = header.querySelector('.op-count');
+
+                // Rebuild header content
+                const opSpan = `<span style="opacity: 0.6; margin-left: 10px; font-size: 0.85em;">[${escapeHtml(group.opId || '')}]</span>`;
+                const tsSpan = tsHtml ? `<span class="timestamp">${tsHtml}</span>` : '';
+                header.innerHTML = `<span class="badge severity-${resolvedSeverity}">${iconHtml}</span> <span>${msgHtml}</span> ${opSpan} ${tsSpan}`;
+
+                if (countBadge) header.appendChild(countBadge);
             }
 
             // Handle REPL Input
