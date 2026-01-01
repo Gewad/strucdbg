@@ -60,8 +60,7 @@ func main() {
 		counter++
 		slog.Info("Main loop iteration",
 			"ev", "main_loop",
-			"iteration", counter,
-			"timestamp", time.Now().Unix())
+			"iteration", counter)
 
 		if counter >= 20 {
 			slog.Info("Stopping after 20 iterations", "ev", "app_shutdown")

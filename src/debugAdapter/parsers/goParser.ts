@@ -63,6 +63,7 @@ export function parseGoStack(stack: string): ExceptionPayload[] | null {
 const stacktraceKeys = ['stack', 'stacktrace'];
 const severityKeys = ['severity', 'level', 'lvl'];
 const messageKeys = ['message', 'msg', 'event', 'text'];
+const timestampKeys = ['timestamp', 'time'];
 
 export const goParser: LogParser = {
     parse(message: Record<string, unknown>): StructuredLogPayload | null {
@@ -103,6 +104,24 @@ export const goParser: LogParser = {
             }
         }
 
+        let timestampIso: string | undefined;
+        for (const key of timestampKeys) {
+            if (message[key] !== undefined) {
+                const val = message[key];
+                console.log('Found timestamp key in Go log parser:', key, "type:", typeof val, 'value:', val);
+                delete message[key];
+                if (typeof val === 'number') {
+                    timestampIso = new Date(val).toISOString();
+                } else if (typeof val === 'string') {
+                    timestampIso = new Date(val).toISOString();
+                }
+                break;
+            }
+        }
+        if (!timestampIso) {
+            timestampIso = new Date().toISOString();
+        }
+
         const payload: StructuredLogPayload = {
             severity,
             message: rawMessage as string,
@@ -110,7 +129,7 @@ export const goParser: LogParser = {
             metadata: {...message},
             operation_id: message['operation_id'] as string | undefined,
             // include current time as timestamp formatted as a string
-            timestamp: new Date().toISOString(),
+            timestamp: timestampIso,
         };
 
         return payload;
