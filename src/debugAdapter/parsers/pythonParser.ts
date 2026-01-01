@@ -10,70 +10,56 @@ import { LogParser } from './logParser';
 import { ExceptionPayload, StructuredLogPayload, StackFrame } from '../../webview/windowManager';
 import { normalizeSeverity } from './parserUtils';
 
-export function parsePythonStack(stack: string): ExceptionPayload[] | null {
-    if (stack === '') {
+export function parsePythonStack(stack: any[]): ExceptionPayload[] | null {
+    if (!Array.isArray(stack) || stack.length === 0) {
         return null;
     }
 
-    const lines = stack.split(/\r?\n/);
-    const frames: StackFrame[] = [];
-    let i = 0;
-    // Skip leading 'Traceback' line if present
-    if (lines[i] && lines[i].startsWith('Traceback')) {
-        i++;
-    }
-
-    while (i < lines.length) {
-        const line = lines[i].trim();
-        const m = line.match(/^File "?(.*)"?, line (\d+), in (.*)$/);
-        if (m) {
-            const filename = m[1];
-            const lineno = parseInt(m[2], 10) || 0;
-            const name = m[3] || '<module>';
-            frames.push({ filename, lineno, name, locals: {} });
-            i += 1; // advance to possible code line
-            // skip the following indented code line if present
-            if (i < lines.length && lines[i].match(/^\s+/)) {
-                i++;
-            }
-            continue;
+    let items: ExceptionPayload[] = [];
+    for (const item of stack) {
+        if (typeof item !== 'object' || item === null) {
+            return null;
         }
 
-        // If the line looks like an exception message, capture it as exc_value
-        i++;
+        const frames: StackFrame[] = [];
+        for (const frame of item.frames || []) {
+            const filename = frame.filename || '<unknown>';
+            const lineno = frame.lineno || 0;
+            const name = frame.name || '<module>';
+            frames.push({ filename, lineno, name, locals: {} });
+        }
+
+        items.push({
+            exc_type: item.exc_type || 'UnknownException',
+            exc_value: item.exc_value || '',
+            is_cause: item.is_cause || false,
+            frames
+        });
     }
 
-    // Try to capture the last non-empty line as the exception message
-    let excValue = '';
-    for (let j = lines.length - 1; j >= 0; j--) {
-        const t = lines[j].trim();
-        if (t) { excValue = t; break; }
+    if (items.length === 0) {
+        return null;
     }
-
-    return [{
-        exc_type: 'PythonTraceback',
-        exc_value: excValue,
-        is_cause: false,
-        frames
-    }];
+    return items;
 }
 
-const stacktraceKeys = ['stack', 'stacktrace'];
+const stacktraceKeys = ['exception'];
 const severityKeys = ['severity', 'level', 'lvl'];
 const messageKeys = ['message', 'msg', 'event', 'text'];
 
 export const pythonParser: LogParser = {
     parse(message: Record<string, unknown>): StructuredLogPayload | null {
         // If message contains a stack-like field, try that first
-        let stackStr: string = '';
+        let stack: any[];
+        let exc: ExceptionPayload[] | null = null;
         for (const key of stacktraceKeys) {
-            if (typeof message[key] === 'string') {
-                stackStr = message[key] as string;
-                delete message[key];
-                break;
-            }
+            if (message[key] === undefined) { continue; }
+
+            stack = message[key] as any[];
+            delete message[key];
+            exc = parsePythonStack(stack);
+            break;
         }
-        const exc = parsePythonStack(stackStr);
 
         // Determine severity from explicit fields when present, otherwise inspect exception text
         let severity: string;

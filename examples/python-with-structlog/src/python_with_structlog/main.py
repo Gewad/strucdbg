@@ -6,7 +6,6 @@ processors = [
     structlog.processors.dict_tracebacks,
     structlog.processors.add_log_level,
     structlog.processors.JSONRenderer(),
-    # structlog.dev.ConsoleRenderer(),
 ]
 structlog.configure(processors)
 
