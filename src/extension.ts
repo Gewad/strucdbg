@@ -4,7 +4,7 @@ import { createDebugAdapterTrackerFactory } from './debugAdapter/debugAdapterTra
 import { WebviewWindowManager } from './webview/windowManager';
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('EXT: SuperLog is now active!'); // Look for this in PARENT window
+    console.log('EXT: Strucdbg is now active!'); // Look for this in PARENT window
 
     // Instantiate the WindowManager and pass it into the provider so it
     // can hand off the concrete webview when it resolves.
