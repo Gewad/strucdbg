@@ -66,7 +66,7 @@
         /* Explicit orange background and dark text for better contrast */
         .severity-warning { background-color: #ff9800; color: white; }
         
-        .details { margin-left: 20px; display: none; background: rgba(128,128,128, 0.1); padding: 5px; }
+        .details { margin-left: 20px; margin-top: 8px; display: none; background: rgba(128,128,128, 0.1); padding: 5px; }
         .details.open { display: block; }
         .json-key { color: var(--vscode-debugTokenExpression-name); }
         .json-val { color: var(--vscode-debugTokenExpression-string); }
@@ -670,6 +670,7 @@
                     }
                     if (metaHtml) {
                         const metaDiv = document.createElement('div');
+                        metaDiv.className = 'meta-block';
                         metaDiv.innerHTML = metaHtml;
                         details.appendChild(metaDiv);
                     }
