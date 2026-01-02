@@ -44,6 +44,15 @@ export class StrucdbgViewProvider implements vscode.WebviewViewProvider {
                 console.log('[ViewProvider] Loading HTML from:', htmlPath);
                 let html = fs.readFileSync(htmlPath, 'utf8');
 
+                // Get the directory where the HTML file is located
+                const webviewDir = path.dirname(htmlPath);
+                const cssUri = webview.asWebviewUri(vscode.Uri.file(path.join(webviewDir, 'styles.css')));
+                const jsUri = webview.asWebviewUri(vscode.Uri.file(path.join(webviewDir, 'webview.js')));
+
+                // Replace relative paths with webview URIs
+                html = html.replace(/href="styles\.css"/, `href="${cssUri}"`);
+                html = html.replace(/src="webview\.js"/, `src="${jsUri}"`);
+
                 // Read inline SVG contents for expected severities and inject them
                 // into the HTML. Inline SVGs can inherit `currentColor` so their
                 // color will match surrounding text when the SVG uses `fill="currentColor"` or `stroke="currentColor"`.
@@ -71,9 +80,9 @@ export class StrucdbgViewProvider implements vscode.WebviewViewProvider {
                     }
                 }
 
-                // Update Content-Security-Policy to allow inline SVGs and keep inline scripts/styles.
+                // Update Content-Security-Policy to allow stylesheets and scripts from the webview resource root
                 try {
-                    const cspMeta = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data:; style-src 'unsafe-inline'; script-src 'unsafe-inline';">`;
+                    const cspMeta = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline';">`;
                     html = html.replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/i, cspMeta);
                 } catch (e) {
                     // ignore

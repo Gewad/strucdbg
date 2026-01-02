@@ -1,0 +1,237 @@
+body { 
+    font-family: var(--vscode-editor-font-family); 
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 10px; 
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+    box-sizing: border-box;
+}
+
+.log-entry { margin-bottom: 5px; border-bottom: 1px solid var(--vscode-panel-border); padding: 4px; }
+.raw { opacity: 0.8; white-space: pre-wrap; }
+.error { color: var(--vscode-errorForeground); }
+
+/* Structured Log Styles */
+.structured { display: flex; flex-direction: column; }
+.header { display: flex; align-items: center; cursor: pointer; }
+.timestamp { margin-left: auto; opacity: 0.6; font-size: 0.85em; }
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px; /* make badge a square */
+    height: 20px;
+    padding: 0; /* no internal padding so icon is centered */
+    border-radius: 4px;
+    font-size: 0.8em;
+    margin-right: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-sizing: border-box;
+}
+
+/* Ensure any inline SVG inside a badge sizes correctly and inherits text color */
+.badge svg {
+    width: 12px; /* smaller icon */
+    height: 12px;
+    margin: 0; /* no extra margin inside square */
+    fill: currentColor;
+    display: block;
+}
+
+.badge .icon-placeholder {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin: 0;
+}
+
+.severity-info .icon-placeholder { background: var(--vscode-progressBar-background); }
+.severity-debug .icon-placeholder { background: var(--vscode-charts-blue); }
+.severity-error .icon-placeholder { background: var(--vscode-errorForeground); }
+.severity-critical .icon-placeholder { background: var(--vscode-errorForeground); }
+/* Use an explicit orange for warnings to avoid transparent theme variables */
+.severity-warning .icon-placeholder { background: #ff9800; }
+.severity-info { background-color: var(--vscode-progressBar-background); color: white; }
+.severity-debug { background-color: var(--vscode-charts-blue); color: white; }
+.severity-error { background-color: var(--vscode-errorForeground); color: white; }
+.severity-critical { background-color: var(--vscode-errorForeground); color: white; }
+/* Explicit orange background and dark text for better contrast */
+.severity-warning { background-color: #ff9800; color: white; }
+
+.details { margin-left: 20px; margin-top: 8px; display: none; background: rgba(128,128,128, 0.1); padding: 5px; }
+.details.open { display: block; }
+.json-key { color: var(--vscode-debugTokenExpression-name); }
+.json-val { color: var(--vscode-debugTokenExpression-string); }
+
+/* Exception Styles */
+.exception-container {
+    margin-top: 10px;
+    background: rgba(255, 0, 0, 0.05);
+    border-left: 3px solid var(--vscode-errorForeground);
+    padding: 8px;
+}
+
+.exception-header {
+    font-weight: bold;
+    color: var(--vscode-errorForeground);
+    margin-bottom: 5px;
+}
+
+.exception-chain {
+    margin-top: 10px;
+}
+
+.exception-item {
+    margin-bottom: 15px;
+    padding: 8px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 3px;
+}
+
+.exception-type {
+    font-weight: bold;
+    color: var(--vscode-errorForeground);
+}
+
+.exception-message {
+    margin-left: 10px;
+    font-style: italic;
+}
+
+.exception-cause {
+    margin-top: 5px;
+    opacity: 0.8;
+    font-size: 0.9em;
+}
+
+.stack-frame {
+    margin: 3px 0;
+    padding: 3px 6px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 2px;
+    font-family: var(--vscode-editor-font-family);
+    font-size: 0.9em;
+}
+
+.stack-frame a {
+    color: var(--vscode-textLink-foreground);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.stack-frame a:hover {
+    text-decoration: underline;
+}
+
+.stack-code {
+    margin-left: 20px;
+    margin-top: 3px;
+    padding: 4px 8px;
+    background: rgba(0,0,0,0.3);
+    border-left: 2px solid #ff9800;
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    font-size: 0.85em;
+    color: var(--vscode-editor-foreground);
+    white-space: pre;
+    overflow-x: auto;
+}
+
+.stack-locals {
+    margin-left: 20px;
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+
+/* Input Area */
+#input-container {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 10px; background: var(--vscode-editor-background);
+    border-top: 1px solid var(--vscode-panel-border);
+}
+
+#repl-input {
+    width: 100%; box-sizing: border-box; padding: 8px;
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border);
+}
+
+/* Tabs */
+#tabs-container {
+    position: relative;
+    z-index: 999;
+    background: var(--vscode-editor-background);
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+    padding-bottom: 5px;
+    padding-top: 6px;
+}
+
+.tab {
+    padding: 5px 12px;
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    border: none;
+    cursor: pointer;
+    border-radius: 3px 3px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.tab.active {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+}
+
+.tab-close {
+    margin-left: 5px;
+    opacity: 0.7;
+    font-weight: bold;
+}
+
+.tab-close:hover {
+    opacity: 1;
+    color: var(--vscode-errorForeground);
+}
+
+/* Small spinner to indicate running session */
+.tab-spinner {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border: 1px solid rgba(128,128,128,0.3);
+    border-top-color: var(--vscode-button-foreground);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 4px;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.session-content {
+    display: none;
+    margin-bottom: 8px;
+}
+
+/* Make the sessions area scrollable while top and input remain fixed */
+#sessions-container {
+    flex: 1 1 auto;
+    overflow: auto;
+    padding-bottom: 60px; /* leave space for the input container */
+}
+
+.session-content.active {
+    display: block;
+}
