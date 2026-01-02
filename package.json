@@ -1,24 +1,39 @@
 {
+  "preview": true,
   "name": "strucdbg",
-  "displayName": "strucdbg",
-  "publisher": "gewad",
+  "displayName": "Strucdbg",
+  "publisher": "GerardsSite",
   "description": "Structured Log Debugger",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gewad/strucdbg"
+  },
+  "icon": "logo.png",
   "engines": {
     "vscode": "^1.106.1"
   },
   "categories": [
-    "Other"
+    "Visualization", "Debuggers"
   ],
   "activationEvents": [
     "onDebug"
   ],
   "contributes": {
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "strucdbg-panel",
+          "title": "Structured Logs",
+          "icon": "$(megaphone)"
+        }
+      ]
+    },
     "views": {
-      "debug": [
+      "strucdbg-panel": [
         {
           "type": "webview",
-          "id": "superlog.logView",
+          "id": "strucdbg.logView",
           "name": "Structured Logs"
         }
       ]
@@ -27,10 +42,6 @@
       {
         "command": "strucdbg.showLogs",
         "title": "Show Structured Logs"
-      },
-      {
-        "command": "strucdbg.helloWorld",
-        "title": "Hello World"
       }
     ]
   },
@@ -60,5 +71,6 @@
     "typescript": "^5.9.3",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2"
-  }
+  },
+  "license": "GPLv3"
 }

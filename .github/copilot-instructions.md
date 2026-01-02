@@ -13,7 +13,7 @@ Use the files below as authoritative examples when making changes or suggesting 
   - Main module: `dist/extension.js` (built from `src/extension.ts`).
 
 - **Webview**:
-  - Development HTML lives at `src/webview/superlogView.html`. The provider will load from `src/webview` in dev or `dist/webview` in production: see `src/webview/SuperLogViewProvider.ts`.
+  - Development HTML lives at `src/webview/strucdbgView.html`. The provider will load from `src/webview` in dev or `dist/webview` in production: see `src/webview/StrucdbgViewProvider.ts`.
   - The webview expects messages using the `WindowManager` contract (see `src/webview/windowManager.ts`) — these types are canonical and used by parsers/adapters.
 
 - **Parsers & debug adapter integration**:
@@ -32,7 +32,7 @@ Use the files below as authoritative examples when making changes or suggesting 
 - **Contributing code changes**:
   - Keep TypeScript types in sync; run `npm run check-types` locally or `npm run watch` to see type errors.
   - Lint rules run with `npm run lint` against `src/`.
-  - For UI changes, update `src/webview/superlogView.html` (dev) and ensure build copies it to `dist/webview` for packaging.
+  - For UI changes, update `src/webview/strucdbgView.html` (dev) and ensure build copies it to `dist/webview` for packaging.
 
 - **Tests & CI**:
   - Unit/integration tests are driven by `vscode-test` (`npm test`). `pretest` compiles and lints before running tests.
@@ -58,6 +58,6 @@ export default newLangParser;
 
 What not to guess
 - Do not assume different `StructuredLogPayload` fields than those in `src/webview/windowManager.ts`.
-- Do not change activation events or packaging paths without updating `package.json` and `SuperLogViewProvider.ts` path logic.
+- Do not change activation events or packaging paths without updating `package.json` and `StrucdbgViewProvider.ts` path logic.
 
 If anything here is unclear or you'd like the instructions to include more examples (e.g., how to add tests for parsers or how build artifacts are produced), tell me which area to expand.  

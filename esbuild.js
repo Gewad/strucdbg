@@ -12,9 +12,9 @@ const copyHtmlPlugin = {
 	name: 'copy-html',
 	setup(build) {
 		build.onEnd(() => {
-			const srcPath = path.join(__dirname, 'src', 'webview', 'superlogView.html');
+			const srcPath = path.join(__dirname, 'src', 'webview', 'strucdbgView.html');
 			const destDir = path.join(__dirname, 'dist', 'webview');
-			const destPath = path.join(destDir, 'superlogView.html');
+			const destPath = path.join(destDir, 'strucdbgView.html');
 			
 			if (!fs.existsSync(destDir)) {
 				fs.mkdirSync(destDir, { recursive: true });

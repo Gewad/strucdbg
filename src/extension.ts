@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { SuperLogViewProvider } from './webview/SuperLogViewProvider';
+import { StrucdbgViewProvider } from './webview/StrucdbgViewProvider';
 import { createDebugAdapterTrackerFactory } from './debugAdapter/debugAdapterTracker';
 import { WebviewWindowManager } from './webview/windowManager';
 
@@ -9,9 +9,9 @@ export function activate(context: vscode.ExtensionContext) {
     // Instantiate the WindowManager and pass it into the provider so it
     // can hand off the concrete webview when it resolves.
     const windowManager = new WebviewWindowManager();
-    const provider = new SuperLogViewProvider(context.extensionUri, windowManager);
+    const provider = new StrucdbgViewProvider(context.extensionUri, windowManager);
     context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider('superlog.logView', provider, {
+        vscode.window.registerWebviewViewProvider('strucdbg.logView', provider, {
             webviewOptions: { retainContextWhenHidden: true }
         })
     );
@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Add command to focus the view
     context.subscriptions.push(
         vscode.commands.registerCommand('strucdbg.showLogs', () => {
-            vscode.commands.executeCommand('superlog.logView.focus');
+            vscode.commands.executeCommand('strucdbg.logView.focus');
         })
     );
 

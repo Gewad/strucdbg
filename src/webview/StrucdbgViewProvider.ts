@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { WebviewWindowManager } from './windowManager';
 
-export class SuperLogViewProvider implements vscode.WebviewViewProvider {
+export class StrucdbgViewProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
 
     constructor(private readonly _extensionUri: vscode.Uri, private readonly _windowManager?: WebviewWindowManager) {}
@@ -35,8 +35,8 @@ export class SuperLogViewProvider implements vscode.WebviewViewProvider {
     private _getHtmlForWebview(webview: vscode.Webview): string {
         // Try to load from src/ first (development), then from dist/ (production)
         const possiblePaths = [
-            path.join(this._extensionUri.fsPath, 'src', 'webview', 'superlogView.html'),
-            path.join(this._extensionUri.fsPath, 'dist', 'webview', 'superlogView.html')
+            path.join(this._extensionUri.fsPath, 'src', 'webview', 'strucdbgView.html'),
+            path.join(this._extensionUri.fsPath, 'dist', 'webview', 'strucdbgView.html')
         ];
 
         for (const htmlPath of possiblePaths) {
