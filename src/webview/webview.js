@@ -4,7 +4,6 @@
     const vscode = acquireVsCodeApi();
     const tabsContainer = document.getElementById('tabs-container');
     const sessionsContainer = document.getElementById('sessions-container');
-    const input = document.getElementById('repl-input');
     
     let messageCount = 0;
     let sessionCounter = 0;
@@ -35,13 +34,14 @@
         lastScrollTop = scrollTop;
     });
 
+    // Track raw logs that couldn't be assigned to sessions
+    const rawLogsNotAssigned = [];
+    let showRawLogsInWelcome = false;
+
     // Create initial session
     createSession('Welcome', 'Welcome', true);
     const welcomeSession = sessions.get('Welcome');
-    const testDiv = document.createElement('div');
-    testDiv.className = 'log-entry raw';
-    testDiv.textContent = 'Webview script loaded successfully. Start debugging to create a new session.';
-    welcomeSession.logsDiv.appendChild(testDiv);
+    createWelcomeContent(welcomeSession);
 
     function createSession(sessionName, sessionId = null, isWelcome = false) {
         // Use provided sessionId or generate one
@@ -147,6 +147,161 @@
         }
     }
 
+    function createWelcomeContent(session) {
+        session.logsDiv.innerHTML = '';
+        
+        // Create welcome container with nice styling
+        const welcomeContainer = document.createElement('div');
+        welcomeContainer.style.cssText = `
+            padding: 40px 20px;
+            text-align: center;
+            max-width: 600px;
+            margin: 20px auto;
+        `;
+        
+        // Welcome title
+        const title = document.createElement('h1');
+        title.style.cssText = `
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: var(--vscode-editor-foreground);
+            font-size: 28px;
+        `;
+        title.textContent = '👋 Welcome to Structured Debug Logs';
+        welcomeContainer.appendChild(title);
+        
+        // Description
+        const description = document.createElement('p');
+        description.style.cssText = `
+            color: var(--vscode-descriptionForeground);
+            line-height: 1.6;
+            margin-bottom: 30px;
+            font-size: 14px;
+        `;
+        description.textContent = 'This extension captures and displays structured logs from your debug sessions in a clean, organized way.';
+        welcomeContainer.appendChild(description);
+        
+        // Getting Started Section
+        const section = document.createElement('div');
+        section.style.cssText = `
+            text-align: left;
+            background: rgba(128, 128, 128, 0.08);
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        `;
+        
+        const sectionTitle = document.createElement('h2');
+        sectionTitle.style.cssText = `
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: var(--vscode-editor-foreground);
+        `;
+        sectionTitle.textContent = 'Getting Started';
+        section.appendChild(sectionTitle);
+        
+        const instructions = document.createElement('ol');
+        instructions.style.cssText = `
+            margin: 0;
+            padding-left: 20px;
+            color: var(--vscode-descriptionForeground);
+            line-height: 1.8;
+            font-size: 14px;
+        `;
+        
+        const steps = [
+            'Start a debug session in VS Code',
+            'Logs from your application will appear in dedicated tabs',
+            'Click on log entries to expand and view details',
+            'Unassigned logs appear here for debugging purposes'
+        ];
+        
+        steps.forEach(step => {
+            const li = document.createElement('li');
+            li.style.marginBottom = '8px';
+            li.textContent = step;
+            instructions.appendChild(li);
+        });
+        
+        section.appendChild(instructions);
+        welcomeContainer.appendChild(section);
+        
+        // Debug toggle section
+        const debugSection = document.createElement('div');
+        debugSection.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(128, 128, 128, 0.05);
+            border-radius: 6px;
+            border: 1px solid var(--vscode-panel-border);
+        `;
+        
+        // Toggle checkbox
+        const toggleCheckbox = document.createElement('input');
+        toggleCheckbox.type = 'checkbox';
+        toggleCheckbox.id = 'raw-logs-toggle';
+        toggleCheckbox.checked = showRawLogsInWelcome;
+        toggleCheckbox.style.cssText = `
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        `;
+        toggleCheckbox.addEventListener('change', (e) => {
+            showRawLogsInWelcome = e.target.checked;
+            createWelcomeContent(session);
+        });
+        
+        const toggleLabel = document.createElement('label');
+        toggleLabel.htmlFor = 'raw-logs-toggle';
+        toggleLabel.style.cssText = `
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--vscode-descriptionForeground);
+            user-select: none;
+        `;
+        toggleLabel.textContent = '🔧 Show unassigned logs (debug mode)';
+        
+        debugSection.appendChild(toggleCheckbox);
+        debugSection.appendChild(toggleLabel);
+        welcomeContainer.appendChild(debugSection);
+        
+        session.logsDiv.appendChild(welcomeContainer);
+        
+        // If debug mode is enabled and we have unassigned logs, show them
+        if (showRawLogsInWelcome && rawLogsNotAssigned.length > 0) {
+            const rawLogsDiv = document.createElement('div');
+            rawLogsDiv.style.cssText = `
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid var(--vscode-panel-border);
+            `;
+            
+            const rawLogsTitle = document.createElement('h3');
+            rawLogsTitle.style.cssText = `
+                margin-top: 0;
+                margin-bottom: 15px;
+                font-size: 14px;
+                color: var(--vscode-editor-foreground);
+            `;
+            rawLogsTitle.textContent = `Unassigned Logs (${rawLogsNotAssigned.length})`;
+            rawLogsDiv.appendChild(rawLogsTitle);
+            
+            rawLogsNotAssigned.forEach(logEntry => {
+                const logDiv = document.createElement('div');
+                logDiv.className = 'log-entry raw';
+                logDiv.textContent = logEntry;
+                rawLogsDiv.appendChild(logDiv);
+            });
+            
+            session.logsDiv.appendChild(rawLogsDiv);
+        }
+    }
+
     // Handle incoming logs from Extension
     window.addEventListener('message', event => {
         const message = event.data;
@@ -188,13 +343,30 @@
             
             // Route logs to the appropriate session
             let sessionId = message.sessionId;
+            let isUnassignedLog = false;
             
             // If sessionId is not set or the session doesn't exist, route to Welcome
             if (!sessionId || !sessions.has(sessionId)) {
                 sessionId = 'Welcome';
+                isUnassignedLog = true;
             }
             
             const session = sessions.get(sessionId);
+            
+            // Track unassigned logs for debug mode
+            if (isUnassignedLog) {
+                const prefix = message.logType === 'error' ? 'ERR: ' : (message.logType === 'structured' ? 'LOG: ' : 'RAW: ');
+                const content = typeof message.content === 'string' ? message.content : (message.logType === 'structured' ? JSON.stringify(message.content) : JSON.stringify(message.content));
+                const logText = prefix + content;
+                rawLogsNotAssigned.push(logText);
+                
+                // If debug mode is enabled and this is the Welcome session, refresh the welcome content
+                if (showRawLogsInWelcome) {
+                    createWelcomeContent(session);
+                }
+                // For unassigned logs, don't render them in the welcome session by default
+                return;
+            }
             
             if (message.logType === 'structured' && message.content.operation_id) {
                 // Handle grouped operations
@@ -391,15 +563,6 @@
 
         if (countBadge) header.appendChild(countBadge);
     }
-
-    // Handle REPL Input
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            const cmd = input.value;
-            vscode.postMessage({ type: 'evaluate', value: cmd });
-            input.value = '';
-        }
-    });
 
     function renderStructured(container, data) {
         const header = document.createElement('div');
