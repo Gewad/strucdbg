@@ -74,11 +74,6 @@ export class WebviewWindowManager implements IWindowManager {
             }
         }
 
-        // Test message
-        setTimeout(() => {
-            this.addRawLog('Webview initialized and ready', 'internal');
-        }, 100);
-
         // Listen for frontend messages and handle them here
         this._view.webview.onDidReceiveMessage(async data => {
             if (!data || !data.type) return;

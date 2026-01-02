@@ -44,7 +44,11 @@ export function createDebugAdapterTrackerFactory(manager: IWindowManager): vscod
                     console.log('[DebugAdapter] Message received - type:', message.type, 'event:', message.event);
                     if (message.type === 'event' && message.event === 'output') {
                         const outputText = message.body.output;
-                        console.log('[DebugAdapter] Output detected, length:', outputText?.length, 'sessionId:', sessionId);
+                        const outputCategory = message.body.category || 'stdout';
+                        console.log('[DebugAdapter] Output detected, length:', outputText?.length, 'category:', outputCategory, 'sessionId:', sessionId);
+                        
+                        // Determine severity based on output category
+                        const defaultSeverity = outputCategory === 'stderr' ? 'error' : 'info';
                         
                         // Split on '}\n{' or '}{' to handle batched JSON objects
                         const potentialLines = outputText.split(/}\s*{/).map((part: string, idx: number, arr: string[]) => {
@@ -81,17 +85,33 @@ export function createDebugAdapterTrackerFactory(manager: IWindowManager): vscod
                                         continue;
                                     }
 
-                                    console.log('[DebugAdapter] Parser could not produce StructuredLogPayload, calling window manager addRawLog, sessionId:', sessionId);
-                                    manager.addRawLog(trimmedLine, sessionId);
+                                    // Parser couldn't produce structured log; convert raw to structured with output category severity
+                                    console.log('[DebugAdapter] Parser could not produce StructuredLogPayload, converting to structured with severity:', defaultSeverity, 'sessionId:', sessionId);
+                                    const rawPayload: StructuredLogPayload = {
+                                        severity: defaultSeverity,
+                                        message: trimmedLine,
+                                        timestamp: new Date().toISOString()
+                                    };
+                                    manager.addStructuredLog(rawPayload, sessionId);
                                 } else {
                                     // Valid JSON but it's a primitive (like "true" or number)
-                                    console.log('[DebugAdapter] JSON primitive detected, calling window manager addRawLog, sessionId:', sessionId);
-                                    manager.addRawLog(trimmedLine, sessionId);
+                                    console.log('[DebugAdapter] JSON primitive detected, converting to structured with severity:', defaultSeverity, 'sessionId:', sessionId);
+                                    const rawPayload: StructuredLogPayload = {
+                                        severity: defaultSeverity,
+                                        message: trimmedLine,
+                                        timestamp: new Date().toISOString()
+                                    };
+                                    manager.addStructuredLog(rawPayload, sessionId);
                                 }
                             } catch (e) {
-                                // Not JSON -> treat as raw text
-                                console.log('[DebugAdapter] Not JSON, calling window manager addRawLog, sessionId:', sessionId);
-                                manager.addRawLog(trimmedLine, sessionId);
+                                // Not JSON -> convert to structured with output category severity
+                                console.log('[DebugAdapter] Not JSON, converting to structured with severity:', defaultSeverity, 'sessionId:', sessionId);
+                                const rawPayload: StructuredLogPayload = {
+                                    severity: defaultSeverity,
+                                    message: trimmedLine,
+                                    timestamp: new Date().toISOString()
+                                };
+                                manager.addStructuredLog(rawPayload, sessionId);
                             }
                         }
                     }
