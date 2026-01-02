@@ -12,15 +12,33 @@ const copyHtmlPlugin = {
 	name: 'copy-html',
 	setup(build) {
 		build.onEnd(() => {
-			const srcPath = path.join(__dirname, 'src', 'webview', 'strucdbgView.html');
 			const destDir = path.join(__dirname, 'dist', 'webview');
-			const destPath = path.join(destDir, 'strucdbgView.html');
 			
 			if (!fs.existsSync(destDir)) {
 				fs.mkdirSync(destDir, { recursive: true });
 			}
-			fs.copyFileSync(srcPath, destPath);
+			
+			// Copy HTML
+			const srcHtmlPath = path.join(__dirname, 'src', 'webview', 'strucdbgView.html');
+			const destHtmlPath = path.join(destDir, 'strucdbgView.html');
+			fs.copyFileSync(srcHtmlPath, destHtmlPath);
 			console.log('[copy] HTML copied to dist/webview/');
+			
+			// Copy CSS
+			const srcCssPath = path.join(__dirname, 'src', 'webview', 'styles.css');
+			const destCssPath = path.join(destDir, 'styles.css');
+			if (fs.existsSync(srcCssPath)) {
+				fs.copyFileSync(srcCssPath, destCssPath);
+				console.log('[copy] CSS copied to dist/webview/');
+			}
+			
+			// Copy JavaScript
+			const srcJsPath = path.join(__dirname, 'src', 'webview', 'webview.js');
+			const destJsPath = path.join(destDir, 'webview.js');
+			if (fs.existsSync(srcJsPath)) {
+				fs.copyFileSync(srcJsPath, destJsPath);
+				console.log('[copy] JS copied to dist/webview/');
+			}
 		});
 	}
 };
