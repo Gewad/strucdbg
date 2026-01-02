@@ -186,17 +186,12 @@
         } else if (message.type === 'new-log') {
             messageCount++;
             
-            // Route raw and error logs to Welcome tab
-            let sessionId;
-            if (message.logType === 'raw' || message.logType === 'error') {
+            // Route logs to the appropriate session
+            let sessionId = message.sessionId;
+            
+            // If sessionId is not set or the session doesn't exist, route to Welcome
+            if (!sessionId || !sessions.has(sessionId)) {
                 sessionId = 'Welcome';
-            } else {
-                // For structured logs, use sessionId from message or create default session
-                sessionId = message.sessionId;
-                if (!sessionId || !sessions.has(sessionId)) {
-                    // Fallback: create a default session if none exists
-                    sessionId = createSession(`Session ${sessionCounter + 1}`);
-                }
             }
             
             const session = sessions.get(sessionId);
