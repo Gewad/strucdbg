@@ -16,7 +16,7 @@ This example demonstrates structured logging in Go using the built-in `log/slog`
 1. Open this folder in VS Code
 2. Press F5 or go to Run and Debug
 3. Select "Launch Go" configuration
-4. View structured logs in the SuperLog extension panel
+4. View structured logs in the Strucdbg extension panel
 
 ## What to expect
 

@@ -45,7 +45,7 @@ export interface IWindowManager {
     notifySessionEnded(sessionId: string): void;
 }
 
-// Thin wrapper around the SuperLogViewProvider that exposes a small,
+// Thin wrapper around the StrucdbgViewProvider that exposes a small,
 // explicit interface for the rest of the application. Every operation
 // requires a `tabId` so the window manager doesn't need to infer session
 // state or routing logic.
