@@ -147,21 +147,17 @@ body {
     opacity: 0.7;
 }
 
-/* Input Area */
-#input-container {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    padding: 10px; background: var(--vscode-editor-background);
-    border-top: 1px solid var(--vscode-panel-border);
+
+/* Make the sessions area scrollable and use remaining space */
+#sessions-container {
+    flex: 1 1 auto;
+    overflow: auto;
 }
 
-#repl-input {
-    width: 100%; box-sizing: border-box; padding: 8px;
-    background: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-    border: 1px solid var(--vscode-input-border);
+.session-content {
+    display: none;
+    margin-bottom: 8px;
 }
-
-/* Tabs */
 #tabs-container {
     position: relative;
     z-index: 999;
@@ -218,18 +214,6 @@ body {
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
-}
-
-.session-content {
-    display: none;
-    margin-bottom: 8px;
-}
-
-/* Make the sessions area scrollable while top and input remain fixed */
-#sessions-container {
-    flex: 1 1 auto;
-    overflow: auto;
-    padding-bottom: 60px; /* leave space for the input container */
 }
 
 .session-content.active {

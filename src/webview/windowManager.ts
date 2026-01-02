@@ -78,17 +78,7 @@ export class WebviewWindowManager implements IWindowManager {
         this._view.webview.onDidReceiveMessage(async data => {
             if (!data || !data.type) return;
             try {
-                if (data.type === 'evaluate') {
-                    const session = vscode.debug.activeDebugSession;
-                    if (session) {
-                        session.customRequest('evaluate', {
-                            expression: data.value,
-                            context: 'repl'
-                        });
-                    } else {
-                        this.addError('No active debug session.', 'internal');
-                    }
-                } else if (data.type === 'openFile') {
+                if (data.type === 'openFile') {
                     const fileUri = vscode.Uri.file(data.file);
                     vscode.window.showTextDocument(fileUri, {
                         selection: new vscode.Range(data.line - 1, 0, data.line - 1, 0),
