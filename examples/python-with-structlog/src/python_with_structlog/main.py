@@ -1,3 +1,4 @@
+import uuid
 import structlog
 import time
 import random
@@ -18,6 +19,12 @@ def log_all():
     logger.warning("Warning from Structlog!", ev="app_start")
     logger.error("Error in Structlog!", ev="app_start")
     logger.critical("Critical in Structlog!", ev="app_start")
+
+    # Generate really long logs
+    long_message = "This is a very long log message. " * 20
+    logger.info(long_message, ev="long_log")
+
+    logger.info("abcdef"*50, ev="long_log_one_liner")
 
     try:
         1 / 0
@@ -40,7 +47,11 @@ if __name__ == "__main__":
 
     logger = logger.bind(operation_id="abcde")
     log_all()
+    logger = logger.unbind("operation_id")
 
+    logger = logger.bind(operation_id=str(uuid.uuid4()))
+    logger.info("Starting long operation message start message", ev="long_operation_start_and_end")
+    logger.info("Ending long operation message end message, but it gets longer so it doesn't fit on the page. probably need to double it"*2, ev="long_operation_start_and_end")
     logger = logger.unbind("operation_id")
 
     try:

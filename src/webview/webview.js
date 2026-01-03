@@ -457,11 +457,11 @@
         // Add the log as a sub-entry
         const group = operationGroups.get(opId);
         const subLogDiv = document.createElement('div');
-        subLogDiv.className = 'log-entry structured';
+        subLogDiv.className = 'log-entry structured nested-log';
         subLogDiv.style.marginLeft = '0';
         subLogDiv.style.borderLeft = '3px solid var(--vscode-panel-border)';
         subLogDiv.style.paddingLeft = '8px';
-        renderStructured(subLogDiv, data);
+        renderStructured(subLogDiv, data, true);
         group.subLogs.appendChild(subLogDiv);
         
         if (autoScroll) {
@@ -513,23 +513,47 @@
         const iconSvg = svgMap[resolvedSeverity] || svgMap[resolvedSeverity === 'warning' ? 'warn' : resolvedSeverity];
         const iconHtml = iconSvg ? iconSvg : `<span class="icon-placeholder"></span>`;
 
+        // Create badge
+        const badge = document.createElement('span');
+        badge.className = `badge severity-${resolvedSeverity}`;
+        badge.innerHTML = iconHtml;
+        header.appendChild(badge);
+
         // Build first -> last message and timestamps
         const firstMsg = group.firstMessage || '';
         const lastMsg = group.lastMessage || firstMsg;
-        const msgHtml = (firstMsg && lastMsg && firstMsg !== lastMsg) ? `${escapeHtml(firstMsg)} -> ${escapeHtml(lastMsg)}` : escapeHtml(firstMsg || lastMsg);
+        const msgText = (firstMsg && lastMsg && firstMsg !== lastMsg) ? `${firstMsg} -> ${lastMsg}` : (firstMsg || lastMsg);
 
+        // Create message container
+        const messageContainer = document.createElement('span');
+        messageContainer.className = 'message-container';
+        messageContainer.textContent = msgText;
+        header.appendChild(messageContainer);
+
+        // Create operation ID span
+        const opSpan = document.createElement('span');
+        opSpan.style.opacity = '0.6';
+        opSpan.style.marginLeft = '10px';
+        opSpan.style.fontSize = '0.85em';
+        opSpan.style.flexShrink = '0';
+        opSpan.textContent = `[${data.operation_id}]`;
+        header.appendChild(opSpan);
+
+        // Add timestamp (if present)
         const firstTs = group.firstTs || '';
         const lastTs = group.lastTs || firstTs;
-        const tsHtml = (firstTs && lastTs && firstTs !== lastTs) ? `${escapeHtml(firstTs)} -> ${escapeHtml(lastTs)}` : (firstTs || lastTs ? escapeHtml(firstTs || lastTs) : '');
-
-        const opSpan = `<span style="opacity: 0.6; margin-left: 10px; font-size: 0.85em;">[${escapeHtml(data.operation_id)}]</span>`;
-        const tsSpan = tsHtml ? `<span class="timestamp">${tsHtml}</span>` : '';
-
-        header.innerHTML = `<span class="badge severity-${resolvedSeverity}">${iconHtml}</span> <span>${msgHtml}</span> ${opSpan} ${tsSpan}`;
+        const tsText = (firstTs && lastTs && firstTs !== lastTs) ? `${firstTs} -> ${lastTs}` : (firstTs || lastTs);
+        if (tsText) {
+            const tsSpan = document.createElement('span');
+            tsSpan.className = 'timestamp';
+            tsSpan.textContent = tsText;
+            header.appendChild(tsSpan);
+        }
 
         header.addEventListener('click', () => {
             const isOpen = subLogsContainer.style.display !== 'none';
             subLogsContainer.style.display = isOpen ? 'none' : 'block';
+            container.classList.toggle('expanded');
         });
 
         container.appendChild(header);
@@ -545,26 +569,52 @@
         const iconSvg = svgMap[resolvedSeverity] || svgMap[resolvedSeverity === 'warning' ? 'warn' : resolvedSeverity];
         const iconHtml = iconSvg ? iconSvg : `<span class="icon-placeholder"></span>`;
 
+        // Update badge
+        const badge = header.querySelector('.badge');
+        if (badge) {
+            badge.className = `badge severity-${resolvedSeverity}`;
+            badge.innerHTML = iconHtml;
+        }
+
+        // Update message container
         const firstMsg = group.firstMessage || '';
         const lastMsg = group.lastMessage || firstMsg;
-        const msgHtml = (firstMsg && lastMsg && firstMsg !== lastMsg) ? `${escapeHtml(firstMsg)} -> ${escapeHtml(lastMsg)}` : escapeHtml(firstMsg || lastMsg);
+        const msgText = (firstMsg && lastMsg && firstMsg !== lastMsg) ? `${firstMsg} -> ${lastMsg}` : (firstMsg || lastMsg);
+        const messageContainer = header.querySelector('.message-container');
+        if (messageContainer) {
+            messageContainer.textContent = msgText;
+        }
 
+        // Update operation ID span (third child after badge and message)
+        const opSpan = header.querySelectorAll('span')[2];
+        if (opSpan && !opSpan.classList.contains('timestamp')) {
+            opSpan.textContent = `[${group.opId || ''}]`;
+        }
+
+        // Update timestamp
         const firstTs = group.firstTs || '';
         const lastTs = group.lastTs || firstTs;
-        const tsHtml = (firstTs && lastTs && firstTs !== lastTs) ? `${escapeHtml(firstTs)} -> ${escapeHtml(lastTs)}` : (firstTs || lastTs ? escapeHtml(firstTs || lastTs) : '');
+        const tsText = (firstTs && lastTs && firstTs !== lastTs) ? `${firstTs} -> ${lastTs}` : (firstTs || lastTs);
+        let tsSpan = header.querySelector('.timestamp');
+        if (tsText) {
+            if (!tsSpan) {
+                tsSpan = document.createElement('span');
+                tsSpan.className = 'timestamp';
+                header.appendChild(tsSpan);
+            }
+            tsSpan.textContent = tsText;
+        } else if (tsSpan) {
+            tsSpan.remove();
+        }
 
         // Preserve existing op-count element if present
         const countBadge = header.querySelector('.op-count');
-
-        // Rebuild header content
-        const opSpan = `<span style="opacity: 0.6; margin-left: 10px; font-size: 0.85em;">[${escapeHtml(group.opId || '')}]</span>`;
-        const tsSpan = tsHtml ? `<span class="timestamp">${tsHtml}</span>` : '';
-        header.innerHTML = `<span class="badge severity-${resolvedSeverity}">${iconHtml}</span> <span>${msgHtml}</span> ${opSpan} ${tsSpan}`;
-
-        if (countBadge) header.appendChild(countBadge);
+        if (countBadge && !header.contains(countBadge)) {
+            header.appendChild(countBadge);
+        }
     }
 
-    function renderStructured(container, data) {
+    function renderStructured(container, data, isNested = false) {
         const header = document.createElement('div');
         header.className = 'header';
         const severity = (data.severity || 'info').toLowerCase();
@@ -575,10 +625,26 @@
         const iconSvg = svgMap[resolvedSeverity] || svgMap[severity];
         const iconHtml = iconSvg ? iconSvg : `<span class="icon-placeholder"></span>`;
 
+        // Create badge
+        const badge = document.createElement('span');
+        badge.className = `badge severity-${severity}`;
+        badge.innerHTML = iconHtml;
+        header.appendChild(badge);
+
+        // Create message container
+        const messageContainer = document.createElement('span');
+        messageContainer.className = 'message-container';
+        messageContainer.textContent = data.message;
+        header.appendChild(messageContainer);
+
         // Add timestamp (if present) on the far right of header
         const ts = formatTimestamp(data);
-        const tsSpanHtml = ts ? `<span class="timestamp">${escapeHtml(ts)}</span>` : '';
-        header.innerHTML = `<span class="badge severity-${severity}">${iconHtml}</span> <span>${escapeHtml(data.message)}</span> ${tsSpanHtml}`;
+        if (ts) {
+            const tsSpan = document.createElement('span');
+            tsSpan.className = 'timestamp';
+            tsSpan.textContent = ts;
+            header.appendChild(tsSpan);
+        }
 
         const details = document.createElement('div');
         details.className = 'details';
@@ -605,6 +671,8 @@
 
         header.addEventListener('click', () => {
             details.classList.toggle('open');
+            // Always toggle expanded class for message wrapping
+            container.classList.toggle('expanded');
         });
 
         container.appendChild(header);
