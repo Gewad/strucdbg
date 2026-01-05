@@ -88,3 +88,14 @@ jobs:
             See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
           draft: false
           prerelease: false
+      
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+      
+      - name: Publish to VS Code Marketplace
+        run: |
+          cd scripts
+          chmod +x publish.sh
+          ./publish.sh
+        env:
+          VSCE_PAT: ${{ secrets.MARKETPLACE_TOKEN }}
