@@ -6,7 +6,7 @@
 
 When debugging modern applications that use structured logging (JSON logs from libraries like `slog`, `zap`, `structlog`, etc.), the output can be overwhelming and difficult to read. Strucdbg automatically captures these structured logs during debug sessions and presents them in a beautiful, easy-to-navigate panel.
 
-![Strucdbg Interface](./img/logging_simple.png)
+![Strucdbg Interface](https://dev.gerards.site/assets/external_use/strucdbg/logging_simple.png)
 
 ## Key Features
 
@@ -21,14 +21,14 @@ When debugging modern applications that use structured logging (JSON logs from l
 - **Operation grouping**: Related logs with the same `operation_id` are grouped together for easy tracing
 - **Timestamp display**: Track when events occurred in your application
 
-![Strucdbg Interface](./img/logging_operations.png)
+![Strucdbg Interface](https://dev.gerards.site/assets/external_use/strucdbg/logging_operations.png)
 
 ### 🐛 Enhanced Stack Traces
 - **Interactive stack traces**: Click on file paths to jump directly to the source code
 - **Code preview**: Hover over stack frames to see the actual code without leaving the log view
 - **Multi-level exception support**: Visualize nested exceptions and their propagation
 
-![Strucdbg Interface](./img/logging_stack.png)
+![Strucdbg Interface](https://dev.gerards.site/assets/external_use/strucdbg/logging_stack.png)
 
 ### 🔍 Multi-Session Support
 - **Tabbed interface**: Each debug session gets its own tab
