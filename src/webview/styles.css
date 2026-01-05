@@ -171,11 +171,19 @@ body {
     z-index: 999;
     background: var(--vscode-editor-background);
     display: flex;
+    flex-wrap: nowrap;
     gap: 5px;
     margin-bottom: 10px;
     border-bottom: 1px solid var(--vscode-panel-border);
     padding-bottom: 5px;
     padding-top: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+}
+
+#tabs-container::-webkit-scrollbar {
+    display: none;
 }
 
 .tab {
@@ -189,6 +197,8 @@ body {
     align-items: center;
     gap: 8px;
     font-size: 0.9em;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .tab.active {
