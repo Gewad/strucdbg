@@ -1,3 +1,12 @@
+## [0.4.3](https://github.com/Gewad/strucdbg/compare/v0.4.2...v0.4.3) (2026-01-05)
+
+
+### Bug Fixes
+
+* gave up and moved images to my website ([ac11fc8](https://github.com/Gewad/strucdbg/commit/ac11fc889ca3d3d3b34a098b1cbff740712ee6fa))
+
+
+
 ## [0.4.2](https://github.com/Gewad/strucdbg/compare/v0.4.1...v0.4.2) (2026-01-05)
 
 
