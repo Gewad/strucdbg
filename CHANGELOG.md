@@ -1,3 +1,12 @@
+## [0.4.1](https://github.com/Gewad/strucdbg/compare/v0.4.0...v0.4.1) (2026-01-05)
+
+
+### Bug Fixes
+
+* auto publish to vscode marketplace ([4cfe341](https://github.com/Gewad/strucdbg/commit/4cfe34146642c0e87f192ea38611b4248afad574))
+
+
+
 # [0.4.0](https://github.com/Gewad/strucdbg/compare/v0.3.0...v0.4.0) (2026-01-05)
 
 
