@@ -27,7 +27,21 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.debug.onDidStartDebugSession((session) => {
             console.log('[Extension] Debug session started:', session.name, 'id:', session.id);
-            windowManager.notifyNewSession(session.id, session.name);
+            console.log('[Extension] Debug session details:', {
+                id: session.id,
+                name: session.name,
+                type: session.type,
+                workspaceFolder: session.workspaceFolder?.uri.fsPath,
+                configuration: session.configuration,
+                parentSession: session.parentSession ? {
+                    id: session.parentSession.id,
+                    name: session.parentSession.name,
+                    type: session.parentSession.type
+                } : undefined
+            });
+            // If this is a child session, merge it into the parent
+            const parentId = session.parentSession?.id;
+            windowManager.notifyNewSession(session.id, session.name, parentId);
         })
     );
 
