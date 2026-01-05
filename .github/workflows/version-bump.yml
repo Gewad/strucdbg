@@ -94,8 +94,7 @@ jobs:
       
       - name: Publish to VS Code Marketplace
         run: |
-          cd scripts
-          chmod +x publish.sh
-          ./publish.sh
+          chmod +x scripts/publish.sh
+          bash scripts/publish.sh
         env:
           VSCE_PAT: ${{ secrets.MARKETPLACE_TOKEN }}
