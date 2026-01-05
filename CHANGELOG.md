@@ -1,3 +1,71 @@
+## 0.0.2 (2026-01-01)
+
+
+### Bug Fixes
+
+* clean up slog example ([5efd777](https://github.com/Gewad/strucdbg/commit/5efd7770c2a0eecf36ff6f9adfd632df2f0a4cc3))
+* merge logs in the same parent debug session ([30dc419](https://github.com/Gewad/strucdbg/commit/30dc419dfca0525cc45689652685ba5da233cb3b))
+* padding of metadata block ([867d8e8](https://github.com/Gewad/strucdbg/commit/867d8e80cec21ce2b4c527b006f8c4ba5eb66583))
+* raw and error logs only on welcome tab ([4cf7c43](https://github.com/Gewad/strucdbg/commit/4cf7c43e00c130852f4576d5f0fffe8f860be778))
+* separate tabs by session id instead of name to avoid logs spilling across tabs ([82fd68e](https://github.com/Gewad/strucdbg/commit/82fd68e7312e3138a28da86c4bb612351a935367))
+* set valid license ([e3f4232](https://github.com/Gewad/strucdbg/commit/e3f4232c3d1129992d99950c76cbd48a8c7209f6))
+* truncate long logs ([3175ba0](https://github.com/Gewad/strucdbg/commit/3175ba0382dce3d65150c5b6e33370c0ffc013ec))
+* zap logs break out of sessions ([750fce9](https://github.com/Gewad/strucdbg/commit/750fce94a775da40347e20be57fba662635bff68))
+
+
+### Features
+
+* add go example with slog ([73ca28a](https://github.com/Gewad/strucdbg/commit/73ca28a12df908fa5bdc759f2d4cc2a7cd8ad581))
+* autoscrolling and preventing closing tabs before session end ([1be9a51](https://github.com/Gewad/strucdbg/commit/1be9a51a2e10363d5e83052f8cf9364d71ab0d22))
+* better operation display ([91fbfdc](https://github.com/Gewad/strucdbg/commit/91fbfdcf7ad2965f233ea044a71f05ba3c79bb38))
+* copilot instructions ([b82d270](https://github.com/Gewad/strucdbg/commit/b82d27042fb4cb6493fd5c7e7a8060724967d79b))
+* exception and traceback formatting ([640db97](https://github.com/Gewad/strucdbg/commit/640db97b72d14a769aef94e6c47d591660c70206))
+* first poc ([2015145](https://github.com/Gewad/strucdbg/commit/20151455156755f4ad8a6f1626b366adeff361d2))
+* go zap example ([918b724](https://github.com/Gewad/strucdbg/commit/918b72462bdb3ff8554cc2aac78d4c1835afd28e))
+* icons instead of emojis ([6cec5ef](https://github.com/Gewad/strucdbg/commit/6cec5ef09e468d3891a9b08ac2b168e2c0e76d70))
+* properly parse timestamps in parsers and reworked python exception parsing ([754cd39](https://github.com/Gewad/strucdbg/commit/754cd39f97f5cb7a545389ce54573d95af5a09ce))
+* raw logs go to relevant session tab ([25ac6c7](https://github.com/Gewad/strucdbg/commit/25ac6c78d26fa8d14ba3493e2f1c2eca442ea227)), closes [#6](https://github.com/Gewad/strucdbg/issues/6)
+* rework introducing window manager and language based parsers for each message ([0b3f608](https://github.com/Gewad/strucdbg/commit/0b3f60851cba67b695888256a4683d686aa650fa))
+* session selector rework ([e6e1631](https://github.com/Gewad/strucdbg/commit/e6e16319207f02b736a58027f5fa9b7922879c69))
+* tabs per debug session ([4607f8e](https://github.com/Gewad/strucdbg/commit/4607f8e3badc798bfe94bc96490ae0eeee7fa796))
+* user friendly welcome page ([919581b](https://github.com/Gewad/strucdbg/commit/919581b9b1896ca11f0ef5f031caea44b62b3624)), closes [#4](https://github.com/Gewad/strucdbg/issues/4)
+
+
+
+## 0.0.3 (2026-01-05)
+
+
+### Bug Fixes
+
+* clean up slog example ([5efd777](https://github.com/Gewad/strucdbg/commit/5efd7770c2a0eecf36ff6f9adfd632df2f0a4cc3))
+* merge logs in the same parent debug session ([30dc419](https://github.com/Gewad/strucdbg/commit/30dc419dfca0525cc45689652685ba5da233cb3b))
+* padding of metadata block ([867d8e8](https://github.com/Gewad/strucdbg/commit/867d8e80cec21ce2b4c527b006f8c4ba5eb66583))
+* raw and error logs only on welcome tab ([4cf7c43](https://github.com/Gewad/strucdbg/commit/4cf7c43e00c130852f4576d5f0fffe8f860be778))
+* separate tabs by session id instead of name to avoid logs spilling across tabs ([82fd68e](https://github.com/Gewad/strucdbg/commit/82fd68e7312e3138a28da86c4bb612351a935367))
+* set valid license ([e3f4232](https://github.com/Gewad/strucdbg/commit/e3f4232c3d1129992d99950c76cbd48a8c7209f6))
+* truncate long logs ([3175ba0](https://github.com/Gewad/strucdbg/commit/3175ba0382dce3d65150c5b6e33370c0ffc013ec))
+* zap logs break out of sessions ([750fce9](https://github.com/Gewad/strucdbg/commit/750fce94a775da40347e20be57fba662635bff68))
+
+
+### Features
+
+* add go example with slog ([73ca28a](https://github.com/Gewad/strucdbg/commit/73ca28a12df908fa5bdc759f2d4cc2a7cd8ad581))
+* autoscrolling and preventing closing tabs before session end ([1be9a51](https://github.com/Gewad/strucdbg/commit/1be9a51a2e10363d5e83052f8cf9364d71ab0d22))
+* better operation display ([91fbfdc](https://github.com/Gewad/strucdbg/commit/91fbfdcf7ad2965f233ea044a71f05ba3c79bb38))
+* copilot instructions ([b82d270](https://github.com/Gewad/strucdbg/commit/b82d27042fb4cb6493fd5c7e7a8060724967d79b))
+* exception and traceback formatting ([640db97](https://github.com/Gewad/strucdbg/commit/640db97b72d14a769aef94e6c47d591660c70206))
+* first poc ([2015145](https://github.com/Gewad/strucdbg/commit/20151455156755f4ad8a6f1626b366adeff361d2))
+* go zap example ([918b724](https://github.com/Gewad/strucdbg/commit/918b72462bdb3ff8554cc2aac78d4c1835afd28e))
+* icons instead of emojis ([6cec5ef](https://github.com/Gewad/strucdbg/commit/6cec5ef09e468d3891a9b08ac2b168e2c0e76d70))
+* properly parse timestamps in parsers and reworked python exception parsing ([754cd39](https://github.com/Gewad/strucdbg/commit/754cd39f97f5cb7a545389ce54573d95af5a09ce))
+* raw logs go to relevant session tab ([25ac6c7](https://github.com/Gewad/strucdbg/commit/25ac6c78d26fa8d14ba3493e2f1c2eca442ea227)), closes [#6](https://github.com/Gewad/strucdbg/issues/6)
+* rework introducing window manager and language based parsers for each message ([0b3f608](https://github.com/Gewad/strucdbg/commit/0b3f60851cba67b695888256a4683d686aa650fa))
+* session selector rework ([e6e1631](https://github.com/Gewad/strucdbg/commit/e6e16319207f02b736a58027f5fa9b7922879c69))
+* tabs per debug session ([4607f8e](https://github.com/Gewad/strucdbg/commit/4607f8e3badc798bfe94bc96490ae0eeee7fa796))
+* user friendly welcome page ([919581b](https://github.com/Gewad/strucdbg/commit/919581b9b1896ca11f0ef5f031caea44b62b3624)), closes [#4](https://github.com/Gewad/strucdbg/issues/4)
+
+
+
 # Change Log
 
 All notable changes to the "strucdbg" extension will be documented in this file.
