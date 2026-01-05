@@ -13,3 +13,8 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+
+**
+
+!logo.png
+!changelog.md
