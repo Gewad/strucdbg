@@ -41,7 +41,7 @@ export interface IWindowManager {
     addStructuredLog(payload: StructuredLogPayload, tabId: TabId): void;
     addRawLog(text: string, tabId: TabId): void;
     addError(text: string, tabId: TabId): void;
-    notifyNewSession(sessionId: string, sessionName: string): void;
+    notifyNewSession(sessionId: string, sessionName: string, parentSessionId?: string): void;
     notifySessionEnded(sessionId: string): void;
 }
 
@@ -52,6 +52,7 @@ export interface IWindowManager {
 export class WebviewWindowManager implements IWindowManager {
     private _view?: vscode.WebviewView;
     private _knownSessions: Map<string, string> = new Map();
+    private _sessionParents: Map<string, string> = new Map(); // child -> parent mapping
 
     constructor() {}
 
@@ -116,29 +117,53 @@ export class WebviewWindowManager implements IWindowManager {
         }
     }
 
+    // Resolve the effective session ID, returning parent if this is a child session
+    private resolveSessionId(sessionId: string): string {
+        return this._sessionParents.get(sessionId) || sessionId;
+    }
+
     public addStructuredLog(payload: StructuredLogPayload, tabId: TabId) {
-        this.postMessage({ type: 'new-log', logType: 'structured', content: payload, sessionId: tabId });
+        const effectiveId = this.resolveSessionId(tabId);
+        this.postMessage({ type: 'new-log', logType: 'structured', content: payload, sessionId: effectiveId });
     }
 
     public addRawLog(text: string, tabId: TabId) {
-        this.postMessage({ type: 'new-log', logType: 'raw', content: text, sessionId: tabId });
+        const effectiveId = this.resolveSessionId(tabId);
+        this.postMessage({ type: 'new-log', logType: 'raw', content: text, sessionId: effectiveId });
     }
 
     public addError(text: string, tabId: TabId) {
-        this.postMessage({ type: 'new-log', logType: 'error', content: text, sessionId: tabId });
+        const effectiveId = this.resolveSessionId(tabId);
+        this.postMessage({ type: 'new-log', logType: 'error', content: text, sessionId: effectiveId });
     }
 
-    public notifyNewSession(sessionId: string, sessionName: string) {
-        console.log('[WindowManager] New debug session:', sessionName, 'id:', sessionId);
-        this._knownSessions.set(sessionId, sessionName);
-        this.postMessage({ type: 'new-session', sessionId, sessionName });
+    public notifyNewSession(sessionId: string, sessionName: string, parentSessionId?: string) {
+        if (parentSessionId) {
+            console.log('[WindowManager] New child debug session:', sessionName, 'id:', sessionId, 'parent:', parentSessionId);
+            // Map child to parent so logs are routed correctly
+            this._sessionParents.set(sessionId, parentSessionId);
+            // Don't create a new tab for child sessions
+        } else {
+            console.log('[WindowManager] New debug session:', sessionName, 'id:', sessionId);
+            this._knownSessions.set(sessionId, sessionName);
+            this.postMessage({ type: 'new-session', sessionId, sessionName });
+        }
     }
 
     public notifySessionEnded(sessionId: string) {
         console.log('[WindowManager] Debug session ended:', sessionId);
-        this.postMessage({ type: 'session-ended', sessionId });
-        if (this._knownSessions.has(sessionId)) {
-            setTimeout(() => this._knownSessions.delete(sessionId), 5 * 60 * 1000);
+        const effectiveId = this.resolveSessionId(sessionId);
+        
+        // Clean up child session mapping
+        if (this._sessionParents.has(sessionId)) {
+            console.log('[WindowManager] Removing child session mapping:', sessionId);
+            this._sessionParents.delete(sessionId);
+        } else {
+            // Only notify for parent sessions
+            this.postMessage({ type: 'session-ended', sessionId: effectiveId });
+            if (this._knownSessions.has(effectiveId)) {
+                setTimeout(() => this._knownSessions.delete(effectiveId), 5 * 60 * 1000);
+            }
         }
     }
 }
