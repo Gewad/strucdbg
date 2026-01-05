@@ -1,3 +1,12 @@
+# [0.4.0](https://github.com/Gewad/strucdbg/compare/v0.3.0...v0.4.0) (2026-01-05)
+
+
+### Features
+
+* auto publish to vscode marketplace ([9429316](https://github.com/Gewad/strucdbg/commit/9429316d89f68e3cc058a8ef564022375df46e8c))
+
+
+
 # 0.3.0 (2026-01-05)
 
 
