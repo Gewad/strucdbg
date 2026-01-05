@@ -1,3 +1,12 @@
+## [0.4.2](https://github.com/Gewad/strucdbg/compare/v0.4.1...v0.4.2) (2026-01-05)
+
+
+### Bug Fixes
+
+* images in vscode marketplace readme ([61f8955](https://github.com/Gewad/strucdbg/commit/61f895566e65b3c4a30f7eb182ddc50699a3f259))
+
+
+
 ## [0.4.1](https://github.com/Gewad/strucdbg/compare/v0.4.0...v0.4.1) (2026-01-05)
 
 
