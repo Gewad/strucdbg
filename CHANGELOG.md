@@ -1,3 +1,18 @@
+# [0.5.0](https://github.com/Gewad/strucdbg/compare/v0.4.3...v0.5.0) (2026-01-06)
+
+
+### Bug Fixes
+
+* prevent metadata from extending to the right of the page ([6c29eb9](https://github.com/Gewad/strucdbg/commit/6c29eb9cca5fad9b153de9cede84e73c719f4d98))
+* tab weirdly scaled with size of the panel ([c8c096f](https://github.com/Gewad/strucdbg/commit/c8c096f78ca162e2bc179f2111d20448338f6836))
+
+
+### Features
+
+* properly handle both errorVerbose and stacktrace fields produced by Zap ([848f294](https://github.com/Gewad/strucdbg/commit/848f2941f3156a4d883d038722999c37423f34cf))
+
+
+
 ## [0.4.3](https://github.com/Gewad/strucdbg/compare/v0.4.2...v0.4.3) (2026-01-05)
 
 
