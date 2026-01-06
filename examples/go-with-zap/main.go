@@ -10,8 +10,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var StackTraceExampleErorr = errors.New("stack trace inner example error")
-
 func main() {
 	cfg := zap.Config{
 		Level:       zap.NewAtomicLevelAt(zap.DebugLevel),
@@ -65,8 +63,8 @@ func main() {
 
 	// Nested error handling (show innermost stack captured at error creation)
 	if err := performOperation(); err != nil {
-		logger.Error("Operation failed",
-			zap.String("error", err.Error()),
+		loggerWithOp.Error("Operation failed",
+			zap.Error(err),
 			zap.String("ev", "operation_error"),
 		)
 	}
@@ -116,13 +114,13 @@ func level2() error {
 }
 
 func level3() error {
-	return StackTraceExampleErorr
+	return errors.New("stack trace inner example error")
 }
 
 func deepErrorLogHandled(logger *zap.Logger, depth int) {
 	if depth <= 0 {
 		logger.Error("Deep error occurred",
-			zap.String("error", StackTraceExampleErorr.Error()),
+			zap.Error(errors.New("stack trace inner example error")),
 			zap.String("ev", "deep_error"),
 		)
 		return
