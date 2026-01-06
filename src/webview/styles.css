@@ -159,7 +159,20 @@ body {
 /* Make the sessions area scrollable and use remaining space */
 #sessions-container {
     flex: 1 1 auto;
-    overflow: auto;
+    /* only allow vertical scrolling; prevent horizontal scrolling caused by long metadata */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Prevent long/continuous metadata from forcing horizontal overflow. */
+/* Ensure flex children can shrink and long words wrap or break where needed. */
+html, body { overflow-x: hidden; }
+.structured, .header, .message-container, .details { min-width: 0; }
+.details, .details * {
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .session-content {
