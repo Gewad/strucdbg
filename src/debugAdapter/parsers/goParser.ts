@@ -27,7 +27,10 @@ export function parseGoStack(stack: string): ExceptionPayload[] | null {
         idx++;
     }
 
-    const frames: StackFrame[] = [];
+    let errMessage = firstLine;
+    let payloads : ExceptionPayload[] = [];
+    let frames: StackFrame[] = [];
+
 
     while (idx < lines.length) {
         const funcLine = lines[idx].trim();
@@ -41,26 +44,50 @@ export function parseGoStack(stack: string): ExceptionPayload[] | null {
             if (m) {
                 const filename = m[1];
                 const lineno = parseInt(m[2], 10);
+                if (filename.includes('src/runtime/proc.go') || filename.includes('src/runtime/asm_')) {
+                    // Skip internal runtime frames
+                    idx += 2;
+                    continue;
+                }
+
                 frames.push({ filename, lineno, name: funcLine, locals: {} });
                 idx += 2;
                 continue;
             }
         }
 
-        // If we can't parse a file line, still include the function name
-        frames.push({ filename: '<unknown>', lineno: 0, name: funcLine, locals: {} });
+
+
+        // If we can't parse a file line, it means we have found a wrapper and a new exception payload is needed
+        if (frames.length > 0) {
+            payloads.push({
+                exc_type: 'GoStack',
+                exc_value: errMessage,
+                is_cause: (payloads.length > 0),
+                frames
+            });
+            frames = [];
+            errMessage = funcLine;
+        }
         idx++;
     }
 
-    return [{
-        exc_type: 'GoStack',
-        exc_value: firstLine,
-        is_cause: false,
-        frames
-    }];
+    if (frames.length > 0) {
+        payloads.push({
+            exc_type: 'GoStack',
+            exc_value: errMessage,
+            is_cause: (payloads.length > 0),
+            frames
+        });
+    }
+
+    // Return the payloads in the opposite order (innermost exception first)
+    payloads.reverse();
+
+    return payloads.length > 0 ? payloads : null;
 }
 
-const stacktraceKeys = ['stack', 'stacktrace'];
+const stacktraceKeys = ['errorVerbose', 'stack', 'stacktrace'];
 const severityKeys = ['severity', 'level', 'lvl'];
 const messageKeys = ['message', 'msg', 'event', 'text'];
 const timestampKeys = ['timestamp', 'time'];
