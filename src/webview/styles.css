@@ -188,11 +188,13 @@ html, body { overflow-x: hidden; }
     gap: 5px;
     margin-bottom: 10px;
     border-bottom: 1px solid var(--vscode-panel-border);
-    padding-bottom: 5px;
-    padding-top: 6px;
+    padding-top: 2px;
+    padding-bottom: 2px;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
+    flex: 0 0 auto; /* keep header height stable */
+    height: 24px; /* fixed header height */
 }
 
 #tabs-container::-webkit-scrollbar {
@@ -212,6 +214,18 @@ html, body { overflow-x: hidden; }
     font-size: 0.9em;
     white-space: nowrap;
     flex-shrink: 0;
+    height: 20px; /* fixed tab height */
+    min-height: 20px;
+    line-height: 1;
+    overflow: hidden; /* avoid growing if label wraps */
+}
+
+.tab > span:first-child {
+    display: inline-block;
+    max-width: 220px; /* prevent label from expanding tab height */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .tab.active {
